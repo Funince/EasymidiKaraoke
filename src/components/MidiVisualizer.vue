@@ -8,13 +8,14 @@
     <div class="interfaz">
 
       <div id="visualization"></div>
-      <div>
-        <input type="range" id="scrollbar-x" min="0" max="1000"  v-model="scrollbarXValue" @input="handleScrollX"> 
+      <div class="scroller">
+        <input type="range" id="scrollbar-x" min="0" max="1000" v-model="scrollbarXValue" @input="handleScrollX">
       </div>
-      
+
     </div>
     <div class="interfaz">
-      <input type="range" id="scrollbar-y" orient="vertical" min="0" max="1000" v-model="scrollbarYValue" @input="handleScrollY">
+      <input type="range" id="scrollbar-y" orient="vertical" min="0" max="1000" v-model="scrollbarYValue"
+        @input="handleScrollY">
     </div>
   </div>
 </template>
@@ -42,15 +43,17 @@ export default {
       midi: null,
       zoom: null,
       scrollbarXValue: ref(0),
-      scrollbarYValue: ref(1000), 
-      note_yScale:null,
-      posicionx:0,
+      scrollbarYValue: ref(1000),
+      note_yScale: null,
+      firstposiciony: null,
+      firstposicionx: null,
+      firstposicion: null,
       currentTransform: d3.zoomIdentity,
-      xscale:null,
-      yScale:null,
-      limitright:0,
-      limitup:0,
-      note_width:0.1,
+      xscale: null,
+      yScale: null,
+      limitright: 0,
+      limitup: 0,
+      note_width: 0.1,
     }
   },
   methods: {
@@ -101,7 +104,7 @@ export default {
           .attr('viewBox', `0 0 ${this.width} ${this.height}`)
           .attr('style', 'max-width:100%;height:auto;');
 
-          this.g = this.svg.append('g').attr('transform', this.currentTransform)
+        this.g = this.svg.append('g').attr('transform', this.currentTransform)
       }
     },
 
@@ -115,23 +118,23 @@ export default {
 
       // Aquí puedes actualizar el contenido del SVG
       // Luego, vuelve a dibujar el contenido
-     // Llama a tu función de visualización
+      // Llama a tu función de visualización
     },
 
     visualizarMIDI() {
-      const midi=this.midi
+      const midi = this.midi
 
       const heigh_note = 16
       const canvaheight = 128 * heigh_note // Altura total basada en el rango de notas MIDI
       this.totalHeight = canvaheight
       const color_relleno = this.color4
-           
+
 
       // Escala para las notas MIDI
       const note_yScale = d3.scaleLinear()
         .domain([0, 127]) // Rango completo de notas MIDI
         .range([0, canvaheight]) // Rango de posiciones verticales
-      this.note_yScale=note_yScale
+      this.note_yScale = note_yScale
 
       let maxTime = 0;
       midi.tracks.forEach((track, trackIndex) => {
@@ -166,12 +169,18 @@ export default {
           }
 
         })
+
+
         // Dibujar las notas MIDI
         noteEvents.forEach((note) => {
           if (note.endTime) {
             const noteName = getNoteName(note.noteNumber) // Función para obtener el nombre de la nota (Do, Re, Mi, etc.)           
             const yPos = canvaheight - note_yScale(note.noteNumber) // Posición vertical basada en la nota MIDI
+            if (this.firstposiciony == null && this.firstposicionx == null) {
+              this.firstposiciony = -yPos + this.height / 2;
+              this.firstposicionx = -note.startTime * this.note_width ;
 
+            }
             this.g
               .append('rect')
               .attr('x', note.startTime * this.note_width) // Ajustar la escala de tiempo para la visualización
@@ -184,33 +193,43 @@ export default {
 
             this.g
               .append('text')
-              .attr('x', (note.startTime+2) * this.note_width) // Ajustar la escala de tiempo para la visualización
+              .attr('x', (note.startTime + 2) * this.note_width) // Ajustar la escala de tiempo para la visualización
               .attr('y', yPos - 2 + heigh_note) // Posición vertical del texto debajo de la nota
               .text(noteName)
               .attr('font-family', 'sans-serif')
-              .attr('font-size', d => `${120*this.note_width}px`)
+              .attr('font-size', d => `${120 * this.note_width}px`)
               .attr('fill', 'black')
               .attr('text-anchor', 'start')
           }
         })
 
+
       })
       this.totalWidth = maxTime * 0.1
       this.zoom = d3.zoom().scaleExtent([0.2, 8])
-        .extent([[0, 0],  [this.width, this.height]])
+        .extent([[0, 0], [this.width, this.height]])
         .translateExtent([[0, 0], [this.totalWidth, canvaheight]])
         .on("zoom", this.zoomed);
-      this.xscale=d3.scaleLinear()
-      .domain([0, 1000])
-      .range([0, this.totalWidth- this.width])
-      this.yScale=d3.scaleLinear()
-      .domain([0, 1000])
-      .range([0, canvaheight - this.height])
+      this.xscale = d3.scaleLinear()
+        .domain([0, 1000])
+        .range([0, this.totalWidth - this.width])
+      this.yScale = d3.scaleLinear()
+        .domain([0, 1000])
+        .range([0, canvaheight - this.height])
       this.limitright = this.totalWidth - this.width;
       this.limitup = canvaheight - this.height;
       this.canvas(canvaheight, heigh_note, this.totalWidth)
+      if (this.firstposiciony != null && this.firstposicionx != null && this.firstposicion == null) {
+        this.currentTransform.x = this.firstposicionx;
+        this.currentTransform.y = this.firstposiciony;
+        let movex = this.xscale.invert(-this.firstposicionx);
+        let movey = this.yScale.invert(-this.firstposiciony);
+        this.scrollbarXValue = Math.floor(movex);
+        this.scrollbarYValue = Math.floor(movey);
+        this.firstposicion = true;
+        this.g.attr("transform", this.currentTransform);
+      }
       this.svg.call(this.zoom);
-
       function getNoteName(noteNumber) {
         const noteNames = [
           'Do',
@@ -233,8 +252,8 @@ export default {
       }
     },
     canvas(canvaheight, altura, rectWidth) {
-      const whitecolor=this.color1 
-      const blackcolor=this.color5
+      const whitecolor = this.color1
+      const blackcolor = this.color5
       const nestedGroup = this.g.append("g");
       const rectHeight = altura
       const rectY = 0
@@ -261,52 +280,56 @@ export default {
 
     zoomed(event) {
       const { transform } = event;
-      
+
       this.currentTransform = transform;
-      this.limitright = this.totalWidth* transform.k - this.width;
-      this.limitup = this.totalHeight*transform.k - this.height;
-     
+      this.limitright = this.totalWidth * transform.k - this.width;
+      this.limitup = this.totalHeight * transform.k - this.height;
+
 
       this.xscale
-      .domain([0, 1000])
-      .range([0, this.limitright])
+        .domain([0, 1000])
+        .range([0, this.limitright])
       this.yScale
-      .domain([0, 1000])
-      .range([this.limitup,0])
+        .domain([0, 1000])
+        .range([this.limitup, 0])
       let movex = this.xscale.invert(-transform.x);
       let movey = this.yScale.invert(-transform.y);
-      this.scrollbarXValue=Math.floor(movex);
-      this.scrollbarYValue=Math.floor(movey);
+      this.scrollbarXValue = Math.floor(movex);
+      this.scrollbarYValue = Math.floor(movey);
       this.g.attr("transform", transform);
-    
+      console.log("zoomed");
+
     },
     handleScrollX(event) {
-      const transform=this.currentTransform;
+      const transform = this.currentTransform;
       let movex = this.xscale(this.scrollbarXValue);
       transform.x = -movex;
-      this.g.attr("transform",this.currentTransform );
-      
+      this.g.attr("transform", this.currentTransform);
+
     },
     handleScrollY(event) {
-      const transform=this.currentTransform;
+      const transform = this.currentTransform;
       let movey = this.yScale(this.scrollbarYValue);
       transform.y = -movey;
-      this.g.attr("transform",this.currentTransform );
-      console.log(this.scrollbarYValue,movey);
+      this.g.attr("transform", this.currentTransform);
+      console.log(this.scrollbarYValue, movey);
     },
   },
   mounted() {
     this.loadDefaultFile();
     this.visualizationContainer = document.getElementById('visualization');
     this.initializeSVG();
+
+
     window.addEventListener('resize', () => {
       this.width = this.visualizationContainer.clientWidth;
       this.height = this.visualizationContainer.clientHeight;
-      this.visualizarMIDI(this.midi);
+      this.visualizarMIDI();
       this.updateSVG();
       console.log('me estoy redimensionando');
     });
   }
+
 }
 
 function hexToRgba(hex, alpha) {
@@ -336,6 +359,7 @@ function hexToRgba(hex, alpha) {
   align-items: center;
   justify-content: center;
   padding-right: 1%;
+  
 }
 
 .cuerpo {
@@ -347,6 +371,7 @@ function hexToRgba(hex, alpha) {
   height: 90%;
   padding-bottom: 2px;
   padding-top: 2px;
+  
 }
 
 #visualization {
@@ -356,8 +381,8 @@ function hexToRgba(hex, alpha) {
   min-height: 20em;
   border: 1px solid black;
   background-color: var(--color-1);
-
 }
+
 
 #scrollbar-y {
 
@@ -371,12 +396,12 @@ function hexToRgba(hex, alpha) {
   writing-mode: bt-lr;
   /* Rotación para hacerlo vertical */
   appearance: slider-vertical;
+  
 }
 
 #scrollbar-x {
   width: 100%;
   height: 20px;
-
 }
 
 button {

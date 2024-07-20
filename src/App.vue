@@ -8,6 +8,9 @@
       <inputtext/>
     </div>
   </div>
+  <div>
+    <!-- <scroll /> -->
+  </div>
 
   <!--   <div>
     <svg id="svg1" width="400" height="300" viewBox="0 0 400 300">
@@ -22,12 +25,14 @@
 import MidiVisualizer from './components/MidiVisualizer.vue'
 import estilogrilla from './components/estilogrilla.vue'
 import inputtext from './components/inputtext.vue'
+import scroll from './components/scroll.vue'
 export default {
   name: 'App',
   components: {
     MidiVisualizer,
     estilogrilla,
-    inputtext
+    inputtext,
+    scroll
   }
 }
 </script>
