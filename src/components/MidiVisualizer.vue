@@ -1,23 +1,31 @@
 <template>
+  
   <div class="cuerpo">
 
     <!--  <input type="file" @change="handleFileUpload" accept=".mid,.midi">
     <button @click="processFile" :disabled="!file">Procesar Archivo MIDI</button>
   -->
 
-    <div class="interfaz">
-      <div id="bloqueA" >
-        <div id="visualization"></div>
-      
-      <input type="range" id="scrollbar-x" min="0" max="1000" v-model="scrollbarXValue" @input="handleScrollX">
-    
-    </div>
-      
+    <div class="interfaz ">
+     
+      <div id="visualization"></div>
+      <!-- <div >
+          <input type="range" id="scrollbar-x" min="0" max="1000" v-model="scrollbarXValue" @input="handleScrollX">
+        </div> -->
+   <!--      <estilogrilla /> -->
+        <div style="width:100% ; overflow-x: auto; height: 20px;">
+          <div style="width: 10000px;">
+          </div>
+        </div>
 
     </div>
-    <div class="interfaz">
+    <div class="interfaz" style="flex-direction: row; justify-content: center;">
       <input type="range" id="scrollbar-y" orient="vertical" min="0" max="1000" v-model="scrollbarYValue"
         @input="handleScrollY">
+        <div style="height:100% ; overflow-y: auto; width: 20px;">
+          <div style="height: 10000px;">
+          </div>
+        </div>
     </div>
 
   </div>
@@ -27,7 +35,12 @@
 import * as d3 from 'd3'
 import { parseArrayBuffer } from 'midi-json-parser'
 import { ref, computed } from 'vue'
+import estilogrilla from './estilogrilla.vue'
+import debounce from 'lodash/debounce'
 export default {
+  components: {
+    estilogrilla
+  },
   data() {
     return {
       contentHeight: 800,
@@ -61,6 +74,7 @@ export default {
     }
   },
   methods: {
+    
     loadDefaultFile() {
       const url = '../prueba audio2.mid'
       fetch(url)
@@ -103,10 +117,9 @@ export default {
       if (!this.svg) {
         this.svg = d3.select(visualizationContainer)
           .append('svg')
-          .attr('width', this.width)
-          .attr('height', 128*16 )
-       
-
+          
+          .attr('viewBox', `0 0 ${this.width} ${this.height}`)
+         
 
         this.g = this.svg.append('g')/* .attr('transform', this.currentTransform) */
         console.log("inicializando svg",this.totalWidth);
@@ -117,9 +130,8 @@ export default {
       if (!this.svg) return;
 
       this.svg
-      .attr('width', this.width)
-      .attr('height', this.limitup)
-  
+
+        .attr('viewBox', `0 0 ${this.width} ${this.height}`);
 
       // Aquí puedes actualizar el contenido del SVG
       // Luego, vuelve a dibujar el contenido
@@ -211,8 +223,7 @@ export default {
 
       })
       this.totalWidth = maxTime * 0.1
-    
-      this.zoom = d3.zoom().scaleExtent([0.2, 8])
+      this.zoom = d3.zoom().scaleExtent([1, 8])
         .extent([[0, 0], [this.width, this.height]])
         .translateExtent([[0, 0], [this.totalWidth, canvaheight]])
         .on("zoom", this.zoomed);
@@ -221,7 +232,7 @@ export default {
         .range([0, this.totalWidth - this.width])
       this.yScale = d3.scaleLinear()
         .domain([0, 1000])
-        .range([canvaheight - this.height,0 ])
+        .range([canvaheight - this.height,0])
       this.limitright = this.totalWidth - this.width;
       this.limitup = canvaheight - this.height;
       this.canvas(canvaheight, heigh_note, this.totalWidth)
@@ -320,24 +331,24 @@ export default {
       this.g.attr("transform", this.currentTransform);
       console.log(this.scrollbarYValue, movey);
     },
+    
   },
+  resized() {
+    
+      this.width = this.visualizationContainer.clientWidth;
+      this.height = this.visualizationContainer.clientHeight;
+      this.updateSVG();
+  },
+  
   mounted() {
     this.loadDefaultFile();
     this.visualizationContainer = document.getElementById('visualization');
     this.initializeSVG();
-
-   
-
-
-    window.addEventListener('resize', () => {
-      this.width = this.visualizationContainer.clientWidth;
-      this.height = this.visualizationContainer.clientHeight;
-      this.visualizarMIDI();
-      this.updateSVG();
-      console.log('me estoy redimensionando');
-    });
-  }
-
+  },
+  beforeUnmount() {
+    // Elimina el listener del evento resize
+    window.removeEventListener('resize', this.resized);
+  },
 }
 
 function hexToRgba(hex, alpha) {
@@ -357,59 +368,65 @@ function hexToRgba(hex, alpha) {
 </script>
 
 <style>
+
 #app,
 .cuerpo {
   width: 100%;
   height: 100%;
   margin: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding-right: 1%;
-  
+
 }
 .cuerpo {
+  display: flex;
+  flex-direction: column;
  
+
+  padding-right: 20px;
   display: grid;
-  grid-template-columns: 100% 2px;
+    grid-template-columns: 100% 40px;
 }
 
 .interfaz {
   height: 100%;
   padding-bottom: 2px;
   padding-top: 2px;
+  display: flex;
+  flex-direction: column;
+
+  justify-content: space-between;
+  max-height: 90vh;
 }
 
 #visualization {
-  height: 100px;
-  width: 100px;
-  min-height: 20em;
-  border: 1px solid black;
+  width: 100%;
+  height: 100%;
+
+  min-height: 240px;
+  padding: 0;
   background-color: var(--color-1);
-}
-
-#bloqueA {
-  overflow: scroll;
-
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  flex:90%
+}
+.scroller {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex:10px
+}
+input{
+  display: flex;
 }
 #scrollbar-y {
 
   right: 0;
   top: 0;
   width: 20px;
-
   /* Ancho del scrollbar */
   height: 100%;
   /* Altura del scrollbar */
   writing-mode: bt-lr;
   /* Rotación para hacerlo vertical */
   appearance: slider-vertical;
- 
 }
 
 #scrollbar-x {  
@@ -429,8 +446,8 @@ button {
     width: 100%;
     
     min-height: 20em;
-    border: 1px solid black;
     background-color: var(--color-1);
+    max-height: 100%;
   }
   
 

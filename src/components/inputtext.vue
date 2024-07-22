@@ -26,29 +26,29 @@ export default {
 </script>
 
 <style>
-#conteiner {
-
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 100%;
-    width: 100%;
-}
-
-#input_letra {
-    width: 100%;
-    height: 90%;
-    padding: 8px;
-    resize: none;
-    box-sizing: border-box;
-    overflow: auto;
-    text-overflow: hidden;
-    overflow-wrap: break-word;
-    outline-style: none;
-    font-size: 16px;
-    color: var(--text--primary);
-    background-color: transparent;
-    font-family: "Inter", "Arial", "Helvetica", "sans-serif";
-}
+    #conteiner {
+        
+        display: flex;
+        flex-direction: column;
+        justify-content: space-evenly;
+        align-items: center;
+        height: 100%;
+        width: 100%;
+    }
+    
+    #input_letra {
+        width: 100%;
+        height: 90%;
+        padding: 8px;
+        resize: none; 
+        box-sizing: border-box;
+        overflow: auto;
+        text-overflow:hidden;
+        overflow-wrap: break-word;
+        outline-style: none;
+        font-size: 16px;
+        color: var(--text--primary);
+        background-color: transparent;
+        font-family: "Inter", "Arial", "Helvetica", "sans-serif";
+    }
 </style>
