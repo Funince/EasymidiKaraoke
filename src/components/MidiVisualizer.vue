@@ -6,17 +6,20 @@
   -->
 
     <div class="interfaz">
-
-      <div id="visualization"></div>
-      <div class="scroller">
-        <input type="range" id="scrollbar-x" min="0" max="1000" v-model="scrollbarXValue" @input="handleScrollX">
-      </div>
+      <div id="bloqueA" >
+        <div id="visualization"></div>
+      
+      <input type="range" id="scrollbar-x" min="0" max="1000" v-model="scrollbarXValue" @input="handleScrollX">
+    
+    </div>
+      
 
     </div>
     <div class="interfaz">
       <input type="range" id="scrollbar-y" orient="vertical" min="0" max="1000" v-model="scrollbarYValue"
         @input="handleScrollY">
     </div>
+
   </div>
 </template>
 
@@ -27,6 +30,7 @@ import { ref, computed } from 'vue'
 export default {
   data() {
     return {
+      contentHeight: 800,
       svg: null,
       file: null,
       arrayBuffer: null,
@@ -47,7 +51,7 @@ export default {
       note_yScale: null,
       firstposiciony: null,
       firstposicionx: null,
-      firstposicion: null,
+      firstposicion: 1,
       currentTransform: d3.zoomIdentity,
       xscale: null,
       yScale: null,
@@ -99,12 +103,13 @@ export default {
       if (!this.svg) {
         this.svg = d3.select(visualizationContainer)
           .append('svg')
-          .attr('width', '100%')
-          .attr('height', this.height)
-          .attr('viewBox', `0 0 ${this.width} ${this.height}`)
-          .attr('style', 'max-width:100%;height:auto;');
+          .attr('width', this.width)
+          .attr('height', 128*16 )
+       
 
-        this.g = this.svg.append('g').attr('transform', this.currentTransform)
+
+        this.g = this.svg.append('g')/* .attr('transform', this.currentTransform) */
+        console.log("inicializando svg",this.totalWidth);
       }
     },
 
@@ -112,9 +117,9 @@ export default {
       if (!this.svg) return;
 
       this.svg
-        .attr('width', this.width)
-        .attr('height', this.height)
-        .attr('viewBox', `0 0 ${this.width} ${this.height}`);
+      .attr('width', this.width)
+      .attr('height', this.limitup)
+  
 
       // Aquí puedes actualizar el contenido del SVG
       // Luego, vuelve a dibujar el contenido
@@ -206,6 +211,7 @@ export default {
 
       })
       this.totalWidth = maxTime * 0.1
+    
       this.zoom = d3.zoom().scaleExtent([0.2, 8])
         .extent([[0, 0], [this.width, this.height]])
         .translateExtent([[0, 0], [this.totalWidth, canvaheight]])
@@ -215,7 +221,7 @@ export default {
         .range([0, this.totalWidth - this.width])
       this.yScale = d3.scaleLinear()
         .domain([0, 1000])
-        .range([0, canvaheight - this.height])
+        .range([canvaheight - this.height,0 ])
       this.limitright = this.totalWidth - this.width;
       this.limitup = canvaheight - this.height;
       this.canvas(canvaheight, heigh_note, this.totalWidth)
@@ -320,6 +326,8 @@ export default {
     this.visualizationContainer = document.getElementById('visualization');
     this.initializeSVG();
 
+   
+
 
     window.addEventListener('resize', () => {
       this.width = this.visualizationContainer.clientWidth;
@@ -361,29 +369,34 @@ function hexToRgba(hex, alpha) {
   padding-right: 1%;
   
 }
-
 .cuerpo {
+ 
   display: grid;
   grid-template-columns: 100% 2px;
 }
 
 .interfaz {
-  height: 90%;
+  height: 100%;
   padding-bottom: 2px;
   padding-top: 2px;
-  
 }
 
 #visualization {
-  width: 100%;
-  height: 100%;
-
+  height: 100px;
+  width: 100px;
   min-height: 20em;
   border: 1px solid black;
   background-color: var(--color-1);
 }
 
+#bloqueA {
+  overflow: scroll;
 
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
 #scrollbar-y {
 
   right: 0;
@@ -396,26 +409,30 @@ function hexToRgba(hex, alpha) {
   writing-mode: bt-lr;
   /* Rotación para hacerlo vertical */
   appearance: slider-vertical;
-  
+ 
 }
 
-#scrollbar-x {
+#scrollbar-x {  
   width: 100%;
   height: 20px;
 }
+  
+ 
 
 button {
   margin-top: 10px;
 }
 
+
 @media (max-width: 1900px) {
   #visualization {
     width: 100%;
-    height: 100%;
+    
     min-height: 20em;
     border: 1px solid black;
     background-color: var(--color-1);
   }
+  
 
 }
 </style>

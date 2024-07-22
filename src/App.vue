@@ -1,16 +1,18 @@
 <template>
-  <h1>EASYKARAOKE</h1>
+  <div class="title">
+    <h1>EASYKARAOKE</h1>
+  </div>
   <div class="container">
-    <div class="content" style="width: 80%;">
+    <div class="content content-large" >
       <MidiVisualizer />
     </div>
-    <div class="content" style="width: 20%;">
+    <div class="content content-small" >
       <inputtext/>
     </div>
   </div>
-  <div>
-    <!-- <scroll /> -->
-  </div>
+ <!-- <div>
+   <scroll />
+  </div>  -->
 
   <!--   <div>
     <svg id="svg1" width="400" height="300" viewBox="0 0 400 300">
@@ -40,9 +42,15 @@ export default {
 <style>
 /* Agrega estilos globales si es necesario */
 html, body {  
-   margin:0px;  
+
    height:100%;  
  }  
+.title {
+  margin-top: 1em;
+  background-color: var(--background-color);
+  color: var(--text--primary);
+  text-align: center;
+}
 .container {
   width: 100%;
   height: 100%;
@@ -53,5 +61,34 @@ html, body {
 .content {
   height: 100%;
   padding: 5px; /* Espaciado interno */
+}
+.content-large {
+  flex:4
+}
+.content-small {
+  flex:1
+}
+
+@media (max-width: 800px) {
+
+  #app,.cuerpo {
+    padding: 0;
+    width: 100%;
+  }
+  .title {
+    font-size: 1 em;
+    margin-top: 0;
+  }
+  .container {
+    display: flex;
+    flex-direction: column; /* Cambia la dirección de los elementos */
+    justify-content: center;
+    align-items: center;
+
+  }
+  .content {
+    width: 100%;
+    border: 1px solid var(--border-color);
+  }
 }
 </style>
