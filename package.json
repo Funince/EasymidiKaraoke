@@ -16,6 +16,7 @@
     "axios": "^1.7.2",
     "bootstrap": "^5.3.3",
     "d3": "^7.9.0",
+    "lodash": "^4.17.21",
     "midi-json-parser": "^8.1.48",
     "vue": "^3.4.29",
     "vue-router": "^4.3.3"

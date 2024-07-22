@@ -28,7 +28,7 @@ export default {
         
         display: flex;
         flex-direction: column;
-        justify-content: center;
+        justify-content: space-evenly;
         align-items: center;
         height: 100%;
         width: 100%;
