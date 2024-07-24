@@ -68,7 +68,7 @@ header {
   /* Espaciado interno */
 }
 .content-large {
-  height: 80%
+  height: 80%;
 }
 .content-small {
   height: 100vh;
@@ -112,6 +112,7 @@ header {
   .content-large {
     flex: 3;
     max-width: 70vw;
+    min-height: 70vh;
     /* El elemento ocupa todo el espacio restante */
   }
 
