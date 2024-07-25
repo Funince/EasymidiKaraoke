@@ -7,6 +7,7 @@
 <script>
 import * as d3 from 'd3'
 import { parseArrayBuffer } from 'midi-json-parser'
+import { transform } from 'typescript'
 import { ref, computed } from 'vue'
 
 export default {
@@ -44,7 +45,22 @@ export default {
       container: null,
       parent: null,
       body: null,
-      height_note: 16
+      height_note: 16,
+      count: 0,
+      rect_notes: null,
+      drag_notes: null,
+      dragstarted: function (event) {
+        console.log('dragstarted')
+        d3.select(this).raise().classed('active', true)
+      },
+      dragged: function (event) {
+        console.log('dragged')
+        d3.select(this).attr('x', event.x).attr('y', event.y)
+      },
+      dragended: function (event) {
+        console.log('dragended')
+        d3.select(this).classed('active', false)
+      }
     }
   },
   methods: {
@@ -127,7 +143,7 @@ export default {
         .domain([0, 127]) // Rango completo de notas MIDI
         .range([0, canvaheight]) // Rango de posiciones verticales
       this.note_yScale = note_yScale
-
+      this.rect_notes = this.g.append('g')
       let maxTime = 0
       midi.tracks.forEach((track, trackIndex) => {
         let currentTime = 0
@@ -170,7 +186,7 @@ export default {
               this.firstposiciony = -yPos + this.height / 2
               this.firstposicionx = -note.startTime * this.note_width
             }
-            this.g
+            this.rect_notes
               .append('rect')
               .attr('x', note.startTime * this.note_width) // Ajustar la escala de tiempo para la visualización
               .attr('y', yPos) // Posición vertical basada en la nota MIDI
@@ -180,7 +196,7 @@ export default {
               .attr('stroke', 'black') // Color del borde
               .attr('stroke-width', '1px') // Ancho del borde
 
-            this.g
+            this.rect_notes
               .append('text')
               .attr('x', (note.startTime + 2) * this.note_width) // Ajustar la escala de tiempo para la visualización
               .attr('y', yPos - 2 + this.heigh_note) // Posición vertical del texto debajo de la nota
@@ -259,81 +275,69 @@ export default {
           .style('fill', color)
           .style('opacity', '0.8')
           .style('stroke', 'white')
-          .style('stroke-width', '0.02px')
+          .style('stroke-width', '0.3px')
       }
 
       nestedGroup.lower()
+
       this.svg.attr('width', this.totalWidth).attr('height', canvaheight)
       this.$refs.visualization.appendChild(this.parent.node())
       this.body.node().scrollBy(-this.firstposicionx, -this.firstposiciony)
-      this.svg.call(this.zoom)
-    },
+      console.log("primera posicion",this.firstposiciony)
+      this.svg.on('dblclick', this.zoom_dblclick)
 
+      this.svg.call(this.zoom).on('dblclick.zoom',null)
+      this.drag_notes=d3.drag()
+      .on('start', this.dragstarted)
+      .on('drag', this.dragged)
+      .on('end', this.dragended)
+      this.rect_notes.selectAll('*').call(this.drag_notes)
+    },
+    zoom_dblclick(event) {
+        this.count = 0
+        const transform = d3.zoomTransform(this.svg.node())
+        let factor = 2
+        let scale=transform.k*factor
+        let [x, y] = d3.pointer(event)
+        if (scale>8){
+          scale=1
+          factor=1/8
+        }
+        console.log("mira que no cambia",this.width, this.height,x,y)
+        x=x*factor-this.width/2
+        y=y*factor-this.height/2
+        const newTransform = d3.zoomIdentity.translate(0, 0).scale(scale)
+        this.scrollbarXValue=x
+        this.scrollbarYValue=y
+        console.log('dblclick2', x, y)  
+        this.svg.transition().duration(500).call(this.zoom.transform, newTransform)
+         
+    },
     zoomed(event) {
       const { transform } = event
-
-      this.currentTransform = transform
-      this.limitright = this.totalWidth * transform.k - this.width
-      this.limitup = this.totalHeight * transform.k - this.height
-      this.xscale.domain([0, 1000]).range([0, this.limitright])
-      this.yScale.domain([0, 1000]).range([this.limitup, 0])
-      let movex = this.xscale.invert(-transform.x)
-      let movey = this.yScale.invert(-transform.y)
-      this.scrollbarXValue = Math.floor(movex)
-      this.scrollbarYValue = Math.floor(movey)
-      console.log('previo', transform.x, transform.y, transform.k)
-      console.log(event)
+      this.svg
+          .attr('height', this.totalHeight * transform.k)
+          .attr('width', this.totalWidth * transform.k)
+      if(event.sourceEvent===null){
+        this.g.attr('transform', transform)
+        this.body.node().scrollTo(this.scrollbarXValue,this.scrollbarYValue)   
+    }
+    else{
       if (event.sourceEvent.type === 'wheel' && event.sourceEvent.ctrlKey) {
         this.body.node().scrollBy(-transform.x, -transform.y)
         transform.x = 0
         transform.y = 0
-        this.svg
-          .attr('height', this.totalHeight * transform.k)
-          .attr('width', this.totalWidth * transform.k)
         this.g.attr('transform', transform)
         console.log('pasa')
-      } else if (event.sourceEvent.type === 'dblclick') {
-        let x = -transform.x / 6
-        console.log('este es el ancho:', this.totalHeight * transform.k)
-        let temporal = ((this.totalHeight + this.height - this.height_note ** 2) * transform.k) / 4
-        let y = (temporal + transform.y) / 12
-        /* let y=((this.totalHeight*transform.k-20)/-transform.y-10)*2*transform.k
-         */
-        console.log('dblclick', x, y)
-        if (y > 0 && x > 0) {
-          this.body.node().scrollBy(x, y)
-          transform.x = 0
-          transform.y = 0
-          this.svg
-            .attr('height', this.totalHeight * transform.k)
-            .attr('width', this.totalWidth * transform.k)
-          this.g.attr('transform', transform)
-          console.log('pasa algo')
-        }
-      } else {
-        console.log('no pasa nada')
       }
-    },
-    handleScrollX(event) {
-      const transform = this.currentTransform
-      let movex = this.xscale(this.scrollbarXValue)
-      transform.x = -movex
-      this.g.attr('transform', this.currentTransform)
-    },
-    handleScrollY(event) {
-      const transform = this.currentTransform
-      let movey = this.yScale(this.scrollbarYValue)
-      transform.y = -movey
-      this.g.attr('transform', this.currentTransform)
-      console.log(this.scrollbarYValue, movey)
-    },
+      } 
+  },
     resized() {
       this.width = this.container.clientWidth
       this.height = this.container.clientHeight
       this.updateSVG()
     }
   },
-
   mounted() {
     this.container = this.$refs.visualization
     this.loadDefaultFile()
@@ -344,7 +348,6 @@ export default {
         console.log('resized')
         this.resized()
       }
-      /* this.resized(); */
     )
   },
   beforeUnmount() {
@@ -366,16 +369,19 @@ export default {
   flex-direction: column;
 
   padding-right: 2px;
+  
 }
 
 .interfaz {
   height: 100%;
+  
   padding-bottom: 2px;
   padding-top: 2px;
   display: flex;
   flex-direction: column;
 
   justify-content: space-between;
+  min-height: 50vh;
   max-height: 90vh;
 }
 
@@ -383,7 +389,7 @@ export default {
   width: 100%;
   height: 100%;
   position: relative;
-  min-height: 240px;
+  min-height: 50vh;
   padding: 0;
   background-color: var(--color-1);
 }
@@ -423,8 +429,7 @@ button {
 @media (max-width: 1900px) {
   #visualization {
     width: 100%;
-
-    min-height: 20em;
+    min-height: 60vh;
     background-color: var(--color-1);
     max-height: 100%;
   }
