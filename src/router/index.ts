@@ -1,5 +1,4 @@
 import MidiVisualizer from '@/components/MidiVisualizer.vue'
-import path from 'path'
 import { createRouter, createWebHistory } from 'vue-router'
 
 
