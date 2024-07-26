@@ -12,35 +12,13 @@
       <inputtext />
     </div>
   </div>
-   <!-- <div>
-     <scroll /> 
-  </div>  -->
-  <!--   <div>
-    <svg id="svg1" width="400" height="300" viewBox="0 0 400 300">
-     
-      <circle cx="200" cy="150" r="50" fill="blue" />
-    </svg>
-    <estilogrilla svgId="svg1" />
-  </div> 
--->
   </main>
-
 </template>
 
-<script>
+<script setup>
 import MidiVisualizer from './components/MidiVisualizer.vue'
-import estilogrilla from './components/estilogrilla.vue'
-import inputtext from './components/inputtext.vue'
-import scroll from './components/scroll.vue'
-export default {
-  name: 'App',
-  components: {
-    MidiVisualizer,
-    estilogrilla,
-    inputtext,
-    scroll
-  }
-}
+import inputtext from './components/InputText.vue'
+
 </script>
 
 <style>
@@ -119,7 +97,5 @@ header {
   .content-small {
     flex: 1;
   }
- 
-
 }
 </style>

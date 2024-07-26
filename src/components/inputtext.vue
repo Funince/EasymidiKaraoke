@@ -1,33 +1,29 @@
 <template>
     <div id="conteiner">
         <h2>Ingrese la letra</h2>
-        <textarea name="input_letra" id="input_letra"
+        <textarea ref="input_letra" id="input_letra"
             placeholder="Ingrese la letra de la canción separada por silaba con -" autofocus="true" spellcheck="false"
             dir="ltr" rows="1"></textarea>
-
+        <button @click="lyricsProcess">
+            Procesar letra
+        </button>
+    <p>
+        {{ texto_dividido }}
+    </p>
     </div>
-
-
 </template>
 
-<script>
-export default {
-    data() {
-        return {
-            inputValue: ''
-        }
-    },
-    methods: {
-        handleInput(event) {
-            this.inputValue = event.target.value;
-        }
-    }
+<script setup>
+import { ref } from 'vue'
+import {textToMidi} from '@/components/utils/text_Midi.js'
+let texto_dividido = ref(''); 
+const lyricsProcess = () => {
+ texto_dividido.value=ref(textToMidi(input_letra.value))
 }
 </script>
 
 <style>
     #conteiner {
-        
         display: flex;
         flex-direction: column;
         justify-content: space-evenly;
