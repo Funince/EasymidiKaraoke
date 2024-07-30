@@ -5,11 +5,11 @@
   <main>
     <div class="container">
     <div class="content content-large">
-      <MidiVisualizer />
+      <MidiVisualizer :data="sharedData"/>
 
     </div>
     <div class="content content-small">
-      <inputtext />
+      <InputText @dataUpdated="updateData"/>
     </div>
   </div>
   </main>
@@ -17,11 +17,16 @@
 
 <script setup>
 import MidiVisualizer from './components/MidiVisualizer.vue'
-import inputtext from './components/InputText.vue'
-
+import InputText from './components/InputText.vue'
+import { ref } from 'vue';
+const sharedData = ref([]);
+const updateData = (newData) => {
+  console.log(newData);
+  sharedData.value = newData;
+}
 </script>
-
 <style>
+
 /* Agrega estilos globales si es necesario */
 header {
   display: flex;

@@ -7,7 +7,7 @@
 <script setup>
 import * as d3 from 'd3'
 import { parseArrayBuffer } from 'midi-json-parser'
-import { ref, onMounted ,onUnmounted} from 'vue'
+import { ref, onMounted ,onUnmounted, watch} from 'vue'
 let visualization = ref(null)
 let svg = ref(null);
 let arrayBuffer = ref(null);
@@ -34,7 +34,33 @@ let body = ref(null)
 let height_note = ref(16)
 let rect_notes = ref(null)
 let drag_notes = ref(null)
+let onTextMidi = ref(null)
+let Alltracks = ref({})
 
+const props = defineProps({
+  dataShared: Array
+})
+
+watch(() => props.dataShared, (value) => {
+  if(svg.value && g.value){
+    value.forEach((item) => {
+    item.forEach((note) => {
+      onTextMidi.value = g.value.append('g')
+      onTextMidi.value
+        .append('text')
+        .attr('x',100)
+        .attr('y',100)
+        .text(note)
+        .attr('font-family', 'sans-serif')
+          .attr('font-size', () => `${120 * note_width.value}px`)
+          .attr('fill', 'black')
+          .attr('text-anchor', 'start')
+    })
+  })
+  }
+  
+  
+})
 function dragstarted(event) {
   console.log('dragstarted')
   d3.select(this).raise().classed('active', true)
@@ -49,8 +75,9 @@ function dragended(event) {
 }
 
 function loadDefaultFile() {
-  const url = '../prueba audio2.mid'
-  fetch(url)
+  const url1 = '../La_camisa_negra.mid'
+  const url2 = '../prueba audio2.mid'
+  fetch(url1)
     .then((response) => response.arrayBuffer())
     .then((data) => {
       arrayBuffer.value = data
@@ -67,7 +94,6 @@ function handleFileUpload(event) {
     reader.readAsArrayBuffer(file)
   }
 }
-
 async function processFile() {
   if (arrayBuffer.value) {
     try {
@@ -81,8 +107,6 @@ async function processFile() {
     }
   }
 }
-
-
 function initializeSVG() {
   width = visualization.value.clientWidth
   height = visualization.value.clientHeight
@@ -105,11 +129,10 @@ function initializeSVG() {
   g.value = svg.value.append('g')
 }
 function updateSVG() {
-  if (!svg.value) return
+  if (!svg.value || !visualization.value) return
   height=visualization.value.clientHeight
   width=visualization.value.clientWidth
   body.value.style('height', height + 'px')
-  console.log('actualizando svg', visualization.value.clientHeight)
 }
 function visualizarMIDI() {
    // Altura total basada en el rango de notas MIDI
@@ -120,17 +143,22 @@ function visualizarMIDI() {
     .scaleLinear()
     .domain([0, 127]) // Rango completo de notas MIDI
     .range([0, totalHeight.value]) // Rango de posiciones verticales
-  rect_notes.value = g.value.append('g')
+  
   let maxTime = 0
 
   midi.value.tracks.forEach((track, trackIndex) => {
+  
     let currentTime = 0
     const noteEvents = []
-
+        
     // Construir una lista de eventos de notas con duraciones calculadas
-    track.forEach((event) => {
+    track.forEach((event,index) => {
+            
       currentTime += event.delta
       if (event.noteOn) {
+        if(!Alltracks.value[event.channel]){
+          Alltracks.value[event.channel]=[]
+        }
         noteEvents.push({
           noteNumber: event.noteOn.noteNumber,
           startTime: currentTime,
@@ -148,6 +176,8 @@ function visualizarMIDI() {
         if (noteOnEvent) {
           noteOnEvent.endTime = currentTime
           noteOnEvent.duration = currentTime - noteOnEvent.startTime
+
+          
         }
         if (currentTime > maxTime) {
           maxTime = currentTime
@@ -156,37 +186,13 @@ function visualizarMIDI() {
     })
     totalWidth.value = maxTime * 0.1
     // Dibujar las notas MIDI
-    noteEvents.forEach((note) => {
-      if (note.endTime) {
-        const noteName = getNoteName(note.noteNumber) // Función para obtener el nombre de la nota (Do, Re, Mi, etc.)
-        const yPos = totalHeight.value - note_yScale.value(note.noteNumber) // Posición vertical basada en la nota MIDI
-        if (firstposiciony.value === null && firstposicionx.value === null) {
-          firstposiciony.value = -yPos + height / 2
-          firstposicionx.value = -note.startTime * note_width.value
-        }
-       
-        rect_notes.value
-          .append('rect')
-          .attr('x', note.startTime * note_width.value) // Ajustar la escala de tiempo para la visualización
-          .attr('y', yPos) // Posición vertical basada en la nota MIDI
-          .attr('width', note.duration * note_width.value) // Duración de la nota ajustada a la escala
-          .attr('height', height_note.value) // Altura de la nota
-          .attr('fill', color_relleno) // Color de relleno
-          .attr('stroke', 'black') // Color del borde
-          .attr('stroke-width', '1px') // Ancho del borde
-
-        rect_notes.value
-          .append('text')
-          .attr('x', (note.startTime + 2) * note_width.value) // Ajustar la escala de tiempo para la visualización
-          .attr('y', yPos - 2 + height_note.value) // Posición vertical del texto debajo de la nota
-          .text(noteName)
-          .attr('font-family', 'sans-serif')
-          .attr('font-size', () => `${120 * note_width.value}px`)
-          .attr('fill', 'black')
-          .attr('text-anchor', 'start')
-      }
-    })
+    
+  noteEvents
+    .filter(note => note.endTime)
+    .forEach(addItem);
   })
+ 
+ paintNotes()
   zoom.value = d3
     .zoom()
     .scaleExtent([0.5, 8])
@@ -203,20 +209,75 @@ function visualizarMIDI() {
     .on('zoom', zoomed)
   canvas()
 }
+function addItem(note){
+  const index = Alltracks.value[note.channel].length>0?Alltracks.value[note.channel].length:0
+
+  Alltracks.value[note.channel].push({"id":`${index}`,"x":note.startTime,"nota":note.noteNumber,"width": note.duration,"channel":note.channel,"velocity":note.velocity})  
+}
+
+function paintNotes(){
+  
+   
+      const yPos = totalHeight.value - note_yScale.value(Alltracks.value[0][0].nota);
+      firstposiciony.value = -yPos + height / 2;
+      firstposicionx.value = -Alltracks.value[0][0].x * note_width.value;
+    rect_notes.value = g.value.append('g')
+    Object.keys(Alltracks.value).forEach((key) => {
+      const data = Alltracks.value[key]
+
+      rect_notes.value.append('g')
+      .attr('id', `track-${key}`)
+      
+  const group= rect_notes.value.selectAll(`#track-${key}`)
+  .data(data, function(d) { return d ? d.name : this.id; })
+  .join('g')
+  .attr('id', (d) => d.id)
+
+
+  group.append("rect")
+  .attr('x', (d) => d.x * note_width.value)
+  .attr('y', (d) => totalHeight.value - note_yScale.value(d.nota))
+  .attr('width', (d) => d.width * note_width.value)
+  .attr('height', height_note.value)
+  .attr('fill', color4)
+  .attr('stroke', 'black')
+  .attr('stroke-width', '1px')
+  
+  group.append('text')
+  .attr('x', (d) => (d.x + 2) * note_width.value)
+  .attr('y', (d) => totalHeight.value - note_yScale.value(d.nota)-2 + height_note.value)
+  .text((d) => getNoteName(d.nota))
+  .attr('font-family', 'sans-serif')
+  .attr('font-size', () => `${120 * note_width.value}px`)
+  .attr('fill', 'black')
+  .attr('text-anchor', 'start')
+    })
+/*    
+        rect_notes.value
+          .append('text')
+          .attr('x', (note.startTime + 2) * note_width.value) // Ajustar la escala de tiempo para la visualización
+          .attr('y', yPos - 2 + height_note.value) // Posición vertical del texto debajo de la nota
+          .text(noteName)
+          .attr('font-family', 'sans-serif')
+          .attr('font-size', () => `${120 * note_width.value}px`)
+          .attr('fill', 'black')
+          .attr('text-anchor', 'start') */
+   
+  }
 function getNoteName(noteNumber) {
     const noteNames = [
-      'Do',
-      'Do#',
-      'Re',
-      'Re#',
-      'Mi',
-      'Fa',
-      'Fa#',
-      'Sol',
-      'Sol#',
-      'La',
-      'La#',
-      'Si'
+      'C',
+      'C#',
+      'D',
+      'D#',
+      'E',
+      'F',
+      'F#',
+      'G',
+      'G#',
+      'A',
+      'A#',
+      'B'
     ]
     const octave = Math.floor(noteNumber / 12) - 1
     const noteName = noteNames[noteNumber % 12]
@@ -247,7 +308,6 @@ function canvas() {
   svg.value.attr('width',totalWidth.value).attr('height', totalHeight.value)
   visualization.value.appendChild(parent.value.node())
   body.value.node().scrollBy(-firstposicionx.value, -firstposiciony.value)
-  console.log("primera posicion", firstposiciony.value)
   svg.value.on('dblclick', zoom_dblclick)
   svg.value.call(zoom.value).on('dblclick.zoom', null)
   drag_notes.value = d3.drag()
