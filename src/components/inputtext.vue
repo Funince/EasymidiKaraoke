@@ -17,8 +17,11 @@
 import { ref } from 'vue'
 import {textToMidi} from '@/components/utils/text_Midi.js'
 let texto_dividido = ref(''); 
+const emit =defineEmits(['dataUpdated'])
 const lyricsProcess = () => {
+    const separateText = textToMidi(input_letra.value)
  texto_dividido.value=ref(textToMidi(input_letra.value))
+ emit('dataUpdated',separateText)
 }
 </script>
 
