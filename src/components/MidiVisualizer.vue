@@ -122,9 +122,10 @@ function procesarMIDI() {
   let maxTime = 0
 
   midi.value.tracks.forEach((track, trackIndex) => {
+  
     let currentTime = 0
     const noteEvents = []
-
+        
     // Construir una lista de eventos de notas con duraciones calculadas
     track.forEach((event, index) => {
 
@@ -149,6 +150,8 @@ function procesarMIDI() {
         if (noteOnEvent) {
           noteOnEvent.endTime = currentTime
           noteOnEvent.duration = currentTime - noteOnEvent.startTime
+
+          
         }
         if (currentTime > maxTime) {
           maxTime = currentTime

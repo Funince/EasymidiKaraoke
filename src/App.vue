@@ -10,6 +10,7 @@
     </div>
     <div class="content content-small">
       <InputText @dataUpdated="updateData"/>
+      <InputText @dataUpdated="updateData"/>
     </div>
   </div>
   </main>
@@ -25,6 +26,7 @@ const updateData = (newData) => {
 }
 </script>
 <style>
+
 
 /* Agrega estilos globales si es necesario */
 header {
