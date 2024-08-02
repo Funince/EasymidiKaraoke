@@ -4,10 +4,10 @@
         <textarea ref="input_letra" id="input_letra"
             placeholder="Ingrese la letra de la canción separada por silaba con -" autofocus="true" spellcheck="false"
             dir="ltr" rows="1"></textarea>
-        <button @click="lyricsProcess">
+        <button class="btn btn-secondary w-100  m-1" @click="lyricsProcess">
             Procesar letra
         </button>
-    <p>
+    <p v-if="texto_dividido">
         {{ texto_dividido }}
     </p>
     </div>

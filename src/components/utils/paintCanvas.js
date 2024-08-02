@@ -12,7 +12,7 @@ export function paintCanvas(
   const dragIndex = ref(null)
   const startX = ref(0)
   const startY = ref(0)
-  const scale = ref({ x: 10, y: 1 }) // Factores de escala para x e y
+  const scale = ref({ x: 1, y: 1 }) // Factores de escala para x e y
   const list_text = ref([])
   const pasoGrilla = ref(150)
   const offsetX = ref(0)
@@ -27,6 +27,7 @@ export function paintCanvas(
   }
 
   function drawGrid() {
+    
     const blackKeys = new Set([1, 3, 6, 8, 10])
 
     // Crear rectángulos iniciales
@@ -65,13 +66,15 @@ export function paintCanvas(
 
   // Dibujar el rectángulo
   function drawRectangles() {
+    console.log('entro')
     rects.value.forEach((rect, index) => {
       const leftLimit = offsetX.value
       const rightLimit = offsetX.value + rCanvas.value.width
       const puntoinicial = rect.x / scale.value.x
       const puntofinal = (rect.x + rect.width) / scale.value.x
+     
       if (puntoinicial < rightLimit && puntofinal > leftLimit) {
-        console.log('entro',offsetX.value)
+        
         ctx.value.fillStyle = 'rgba(0, 128, 255, 0.5)'
         const y = rCanvas.value.height - rect.nota * height_note
         const x = rect.x / scale.value.x-offsetX.value 

@@ -6,14 +6,18 @@
         <div class="page-backward" :style="pageBackwardStyle" @mousedown.prevent="handleMouseDown($event,-4 * SCROLL_BASE_AMOUNT)" @mouseup="stopCounting" @mouseleave.prevent="stopCounting"/>
         <div v-if="!disabled" ref="thumb" class="thumb" :style="thumbStyle" @mousedown.prevent="onMouseDownThumb($event)"/>
         <div class="page-forward" :style="pageForwardStyle" @mousedown.prevent="handleMouseDown($event,4 * SCROLL_BASE_AMOUNT)" @mouseup="stopCounting" @mouseleave.prevent="stopCounting"/>
-        <div class="button-forward" :style="buttonStyle" @mousedown.prevent="handleMouseDown($event,SCROLL_BASE_AMOUNT)"@mouseup="stopCounting" @mouseleave.prevent="stopCounting">
+        <div class="button-forward" :style="buttonStyle" @mousedown.prevent="handleMouseDown($event,SCROLL_BASE_AMOUNT)" @mouseup="stopCounting" @mouseleave.prevent="stopCounting"
+       >
             <svg-icon type="mdi" :path="ArrowUP" class="triangle"></svg-icon>
         </div>
+
+        
+   
     </div>
 </template>
 <script setup>
 import SvgIcon from '@jamescoyle/vue-icon';
-import { mdiArrowUpDropCircleOutline} from '@mdi/js';
+import { mdiArrowUpDropCircleOutline,} from '@mdi/js';
 import { ref ,computed,onMounted, watch,nextTick} from 'vue';
 const thumb = ref(null);
 const scrollOffset = ref(0);
@@ -25,6 +29,8 @@ const LONG_PRESS_INTERVAL = 50;
 const LONG_PRESS_SPEED = 0.5;
 const SCROLL_BASE_AMOUNT = ref(20);
 const ArrowUP = ref(mdiArrowUpDropCircleOutline);
+
+
 const props = defineProps({
   isVertical:{ Boolean,default: false},
   
@@ -86,7 +92,6 @@ const pageBackwardStyle = computed(() => ({
     function onscroll(scroll) {  
       
       scrollOffset.value =  Math.max(0, Math.min(maxOffset.value, scroll));
-      console.log('scrollWatch',scrollOffset.value);
     }
 
    let moveIntervalId = null; 
@@ -95,10 +100,8 @@ const handleMouseDown = (e,delta) => {
     if (disabled.value) {
     return;
   }
-  const startPos = getPoint(e);
-  console.log(startPos);
   let scroll=scrollOffset.value;
-  
+  console.log('scroll',scroll)
   if (!moveIntervalId) {
 
       moveIntervalId = setInterval(() => {
@@ -110,32 +113,46 @@ const handleMouseDown = (e,delta) => {
 };
 
 let startPosThumb=null;
+let drag=false;
 const onMouseDownThumb=(e) => {
-  startPosThumb = getPoint(e);
+  startPosThumb = getMousePos(e);
+
+  drag=true;
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', stopOnMouseUp);
 }
 
 function onMouseMove(e) {
+  if(drag){
     const currentPos = getMousePos(e)
-    
-    const delta = props.isVertical ? currentPos.y : currentPos.x ;
-    const ratio = computed(() => delta / maxLength.value);
-    console.log('ratio',ratio.value);
+
+    const delta = props.isVertical ? currentPos.y-startPosThumb.y : currentPos.x-startPosThumb.x;
+
+      
+    const ratio =  delta / maxLength.value;
+
     const scroll = scrollOffset.value + ratio * maxOffset.value;
+
     onscroll(scroll);
+  }
+    
   }
 
   function getMousePos(evt) {
-    const rect = thumb.value.getBoundingClientRect()
+    const rect = thumb.value.getBoundingClientRect();
+    
+    const x= evt.clientX -rect.left;
+    const y= evt.clientY - rect.top;
+
     return {
-      x: evt.clientX - rect.lef,
-      y: evt.clientY - rect.top
+      x: x,
+      y: y
     }
   }
 
   function stopOnMouseUp(){
     startPosThumb = null;
+    drag=false;
     document.removeEventListener('mousemove', onMouseMove);
   }
   const stopCounting = () => {
@@ -143,16 +160,25 @@ function onMouseMove(e) {
     moveIntervalId = null;
   }
 
-
-onMounted(() => {
-
-        if (props.isVertical) {
-        ancho.value= document.getElementById('elComponente').clientHeight;
-        console.log("este es el alto",ancho.value);
+  function size (t) {
+    if (props.isVertical) {
+        ancho.value= t.clientHeight;
+      
       } else {
-        console.log('size',document.getElementById('elComponente').clientWidth);
-        ancho.value = document.getElementById('elComponente').clientWidth;
+        ancho.value = t.clientWidth;
+        
       }
+  }
+
+let resizeObserver;
+onMounted(() => {
+  const t=document.getElementById('elComponente')
+  size(t);
+  resizeObserver = new ResizeObserver(()=>
+  {
+    size(t);
+  });
+  resizeObserver.observe(t);
 });
 
 

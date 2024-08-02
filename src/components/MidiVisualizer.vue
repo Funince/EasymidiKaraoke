@@ -1,29 +1,52 @@
 <template>
   <div class="cuerpo">
+    <slot>
+      <BarraMenu :listChannel="listChannel" @SelectChannel="seleccion" @aumenta="aumenta" @disminuye="disminuye" />
+    </slot>
     <div ref="visualization" id="visualization">
+
       <div ref="contCanvas" class="contCanvas">
         <canvas ref='rCanvas' id="idCanvas"></canvas>
       </div>
-      <slot>
-        <BarraScroll ref="scrollbar" :contentLength="contentLength" />
-      </slot>
+      <div style="display: flex ; align-items: center;">
+        <div style="width: 100%; ">
+          <BarraScroll ref="scrollbar" :contentLength="contentLength" />
+        </div>
+        
+        <div class="zoom-svg" @click="aumenta">
+          <svg-icon type="mdi" :path="mdiPlusCircle" ></svg-icon>
+          
+        </div>
+        <div class="zoom-svg" @click="scaleReturn">
+          <svg-icon type="mdi" :path="mdiAlbum" ></svg-icon>
+        </div>
+        <div class="zoom-svg" @click="disminuye">
+          <svg-icon type="mdi" :path="mdiMinusCircle" ></svg-icon>
+        </div>
+      </div>
+
     </div>
+
   </div>
 </template>
 
 <script setup>
-const contentLength = ref(0)
+import SvgIcon from '@jamescoyle/vue-icon';
+import { mdiPlusCircle, mdiMinusCircle ,mdiAlbum} from '@mdi/js';
+import BarraMenu from '@/components/BarraMenu.vue'
 import BarraScroll from '@/components/BarraScroll.vue'
+import { debounce } from 'lodash'
 import { parseArrayBuffer } from 'midi-json-parser'
-import { toRefs, ref, onMounted, onBeforeMount, onUnmounted, watch, onUpdated } from 'vue'
+import { toRefs, ref, onMounted, onBeforeMount, onUnmounted, watch, onUpdated, computed } from 'vue'
 import { paintCanvas } from '@/components/utils/paintCanvas.js'
+const listChannel = ref([]);
 let visualization = ref(null)
 let svg = ref(null)
 let arrayBuffer = ref(null)
+const contentLength = ref(0)
+const scrollbar = ref(null)
 const contCanvas = ref(null)
-const whitecolor = "#f0f0f0";
-const blackcolor = "#e0e0e0";
-const diccionas = ref({})
+let scale_temp = { x: 1, y: 1 }
 const color1 = '#8dbf8b'
 const color2 = '#fcf1d8'
 const color3 = '#fadc9c'
@@ -33,50 +56,93 @@ let width = 0
 let height = 0
 let totalHeight = ref(0)
 let totalWidth = ref(0)
-let g = ref(null)
 let midi = ref(null)
-let zoom = ref(null)
-let scrollbarXValue = ref(0)
-let scrollbarYValue = ref(0)
 let NOTAS_TOTAL = ref(128);
 let firstposiciony = ref(null)
 let firstposicionx = ref(null)
-let note_width = ref(0.1)
-let parent = ref(null)
 let body = ref(null)
 let height_note = ref(16)
-let rect_notes = ref(null)
-let drag_notes = ref(null)
-let onTextMidi = ref(null)
 let tempTracks = {}
-
 const Alltracks = ref({})
 const props = defineProps({
   sharedData: Array,
 });
 const { sharedData } = toRefs(props);
+const tecla = () => {
+  console.log('tecla')
+    
+}
+const aumenta = () => {
+  let tempscale = scale.value.x
+  if(tempscale>12){
+    tempscale=scale.value.x-10
+  }
+  else if (tempscale > 1) {
+    tempscale = scale.value.x - 1
+  }
+  else if (tempscale > 0.2) {
+    tempscale = scale.value.x - 0.1
+  }
+  else  {
+    console.log('no se puede reducir mas')
+    return
+  }
+  scale.value.x = tempscale
+  contentLength.value = totalWidth.value / scale.value.x
+  drawGrid()
+  drawRectangles()
+
+}
+const disminuye = () => {
+  if (scale.value.x > 200) return
+  scale.value.x = scale.value.x + 10
+  contentLength.value = totalWidth.value / scale.value.x
+  console.log('scale',scale.value.x)
+  drawGrid()
+  drawRectangles()
+
+}
+
+const scaleReturn = () => {
+  scale.value.x=scale_temp.x
+  console.log('scale',scale.value.x)
+  contentLength.value = totalWidth.value / scale.value.x
+  drawGrid()
+  drawRectangles()
+}
+
+
+const seleccion = (value) => {
+  if (Alltracks.value[value]) {
+    rects.value = Alltracks.value[value]
+    drawGrid()
+    drawRectangles()
+    iniciarScroll(value)
+  }
+}
+
 watch(
   sharedData,
   (newValue) => {
-     newValue.forEach((oracion) => {
+    newValue.forEach((oracion) => {
       oracion.forEach((silaba) => {
-        
+
       })
     })
-    list_text.value = newValue.flat() 
-    offsetX.value +=100
+    list_text.value = newValue.flat()
+
     drawGrid()
     drawRectangles()
   }
 );
+
 async function loadDefaultFile() {
   const url1 = '../La_camisa_negra.mid'
   const url2 = '../prueba audio2.mid'
-  fetch(url2)
+  fetch(url1)
     .then((response) => response.arrayBuffer())
     .then((data) => {
       arrayBuffer.value = data
-
     })
 }
 function handleFileUpload(event) {
@@ -98,6 +164,8 @@ async function processFile() {
       console.log('procesando archivo')
       procesarMIDI()
       Alltracks.value = tempTracks
+      listChannel.value = Object.keys(tempTracks)
+
     } catch (error) {
       console.error('Error parsing MIDI file:', error)
     }
@@ -122,10 +190,10 @@ function procesarMIDI() {
   let maxTime = 0
 
   midi.value.tracks.forEach((track, trackIndex) => {
-  
+
     let currentTime = 0
     const noteEvents = []
-        
+
     // Construir una lista de eventos de notas con duraciones calculadas
     track.forEach((event, index) => {
 
@@ -151,7 +219,7 @@ function procesarMIDI() {
           noteOnEvent.endTime = currentTime
           noteOnEvent.duration = currentTime - noteOnEvent.startTime
 
-          
+
         }
         if (currentTime > maxTime) {
           maxTime = currentTime
@@ -186,9 +254,10 @@ function note_yScale(e) {
 
 function iniciarScroll(channel = 0) {
   const yPos = totalHeight.value - tempTracks[channel][0].nota * height_note.value
-  firstposiciony.value = yPos - height / 2
+  firstposiciony.value = (yPos - height / 2) / scale.value.y
   firstposicionx.value = tempTracks[channel][0].x - 10
   console.log('firstposiciony', firstposicionx.value)
+  scrollbar.value.scrollOffset = firstposicionx.value / scale.value.x
   contCanvas.value.scrollTo(firstposicionx.value, firstposiciony.value)
 }
 
@@ -212,33 +281,55 @@ watch(
   (value) => {
     if (value) {/* 
         aqui deberia desplegar un menu de acciones */
-      console.log(midi.value)
-      rects.value = value[0]
-      console.log(rects.value)
-      contentLength.value = totalWidth.value
 
-/*       if (totalWidth.value < 10000) {
+      rects.value = value[0]
+      if (totalWidth.value < 10000) {
         scale.value = { x: 1, y: 1 }
       }
       else {
         const x = 10 * Math.round(totalWidth.value / 10000 / 10)
         console.log('x', x)
+        scale_temp.x = x
         scale.value = { x: x, y: 1 }
-      } */
+      }
+       
+      contentLength.value = totalWidth.value / scale.value.x
       drawGrid();
       drawRectangles()
       iniciarScroll()
     }
   }
 )
-
+let resizeObserver;
+function handleResize() {
+  rCanvas.value.width = contCanvas.value.clientWidth
+  drawGrid();
+  drawRectangles()
+}
+const debouncedHandleResize = debounce(handleResize, 300);
 onMounted(() => {
   console.log('anchoTotal', rCanvas.value.width, scale.value.x)
-  rCanvas.value.width=contCanvas.value.clientWidth
+  rCanvas.value.width = contCanvas.value.clientWidth
   console.log('anchoTotal', rCanvas.value.width, scale.value.x)
   rCanvas.value.addEventListener("mousedown", pickClick);
   rCanvas.value.addEventListener("mousemove", pickDrag);
   rCanvas.value.addEventListener("mouseup", pickRelease);
+  if (visualization.value) {
+    resizeObserver = new ResizeObserver(debouncedHandleResize)
+    resizeObserver.observe(visualization.value);
+  }
+  watch(
+    () => scrollbar.value.scrollOffset,
+    (value) => {
+
+      console.log(value)
+      offsetX.value = value
+      drawGrid()
+      drawRectangles()
+
+    }
+  )
+
 })
 onUpdated(() => {
 
@@ -259,20 +350,21 @@ onUpdated(() => {
 .cuerpo {
   width: 100%;
   height: 100%;
-  margin: 0;
+  margin: 0px;
 }
 
 .cuerpo {
   flex-direction: column;
-  padding-right: 2px;
+  padding-right: 1rem;
 }
 
 .contCanvas {
   height: 100%;
   width: 100%;
-  overflow: auto;
+  overflow-y: auto;
   margin: 0%;
   padding: 0;
+  max-height: 90vh;
 }
 
 #visualization {
@@ -282,8 +374,19 @@ onUpdated(() => {
   min-height: 50vh;
   padding: 0;
   background-color: #f0f0f0;
+  max-height: 90vh;
 }
 
+.zoom-svg {
+  width: 17px;
+  height: 17px;
+}
+
+.zoom-svg svg {
+  width: 17px;
+  height: 17px;
+  display: block;
+}
 @media (max-width: 1900px) {
   #visualization {
     width: 100%;
