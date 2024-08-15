@@ -35,10 +35,12 @@ import SvgIcon from '@jamescoyle/vue-icon';
 import { mdiPlusCircle, mdiMinusCircle ,mdiAlbum} from '@mdi/js';
 import BarraMenu from '@/components/BarraMenu.vue'
 import BarraScroll from '@/components/BarraScroll.vue'
-import { debounce } from 'lodash'
+import { debounce,clamp } from 'lodash'
 import { parseArrayBuffer } from 'midi-json-parser'
 import { toRefs, ref, onMounted, onBeforeMount, onUnmounted, watch, onUpdated, computed } from 'vue'
 import { paintCanvas } from '@/components/utils/paintCanvas.js'
+const { offsetX, pasoGrilla, list_text, rCanvas, ctx, rects, scale, drawGrid, drawRectangles, pickClick, pickDrag, pickRelease } = paintCanvas()
+
 const listChannel = ref([]);
 let visualization = ref(null)
 let svg = ref(null)
@@ -74,30 +76,21 @@ const tecla = () => {
 }
 const aumenta = () => {
   let tempscale = scale.value.x
-  if(tempscale>12){
-    tempscale=scale.value.x-10
-  }
-  else if (tempscale > 1) {
-    tempscale = scale.value.x - 1
-  }
-  else if (tempscale > 0.2) {
-    tempscale = scale.value.x - 0.1
-  }
-  else  {
-    console.log('no se puede reducir mas')
-    return
-  }
-  scale.value.x = tempscale
+  const newescala=clamp(tempscale*0.75,0.25,200)
+  scale.value.x = newescala
   contentLength.value = totalWidth.value / scale.value.x
+  scrollbar.value.scrollOffset = scrollbar.value.scrollOffset*tempscale/newescala
   drawGrid()
   drawRectangles()
 
 }
 const disminuye = () => {
-  if (scale.value.x > 200) return
-  scale.value.x = scale.value.x + 10
+  let tempscale = scale.value.x
+  const newescala = clamp(tempscale / 0.75, 0.25, 200)
+  scale.value.x = newescala
   contentLength.value = totalWidth.value / scale.value.x
-  console.log('scale',scale.value.x)
+  scrollbar.value.scrollOffset = scrollbar.value.scrollOffset * tempscale / newescala
+
   drawGrid()
   drawRectangles()
 
@@ -261,7 +254,7 @@ function iniciarScroll(channel = 0) {
   contCanvas.value.scrollTo(firstposicionx.value, firstposiciony.value)
 }
 
-const { offsetX, pasoGrilla, list_text, rCanvas, ctx, rects, scale, drawGrid, drawRectangles, pickClick, pickDrag, pickRelease } = paintCanvas()
+
 
 
 onBeforeMount(async () => {

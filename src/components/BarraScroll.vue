@@ -17,6 +17,7 @@
 </template>
 <script setup>
 import SvgIcon from '@jamescoyle/vue-icon';
+
 import { mdiArrowUpDropCircleOutline,} from '@mdi/js';
 import { ref ,computed,onMounted, watch,nextTick} from 'vue';
 const thumb = ref(null);
