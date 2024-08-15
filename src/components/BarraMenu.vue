@@ -82,5 +82,7 @@ const disminuye = () => {
 </script>
 
 <style scoped>
-/* Estilos adicionales para el menú desplegable si es necesario */
+.navbar {
+    height: 3rem;
+}
 </style>
