@@ -7,7 +7,7 @@
       
     <div class="content content-large">
       
-      <MidiVisualizer :sharedData="sharedData" :seChannel="seChannel" @ListChannel="updateList"/>
+      <MidiVisualizer :sharedData="sharedData" :seChannel="seChannel" />
       
     </div>
     <div class="content content-small">
@@ -18,8 +18,8 @@
 </template>
 
 <script setup>
-import MidiVisualizer from './components/MidiVisualizer.vue'
-import InputText from './components/InputText.vue'
+import MidiVisualizer from '@/components/MidiVisualizer.vue'
+import InputText from '@/components/InputText.vue'
 import { ref } from 'vue';
 
 const sharedData = ref([]);

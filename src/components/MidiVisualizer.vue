@@ -1,32 +1,33 @@
 <template>
-  <div class="cuerpo">
+  <div tabindex="3" @keydown.ctrl.up="aumenta" @keydown.ctrl.down="disminuye" class="cuerpo"  >
     <slot>
       <BarraMenu :listChannel="listChannel" @SelectChannel="seleccion" @aumenta="aumenta" @disminuye="disminuye" />
     </slot>
-    <div ref="visualization" id="visualization">
+    <div style="height: 40px;">
+      <canvas ref="gridcanvas" id="gridcanvas"></canvas>
+    </div >
+    <div tabindex="2" ref="visualization" id="visualization">
 
-      <div ref="contCanvas" class="contCanvas">
+      <div tabindex="1" ref="contCanvas" class="contCanvas">
         <canvas ref='rCanvas' id="idCanvas"></canvas>
-      </div>
+    </div>
+  </div>
       <div style="display: flex ; align-items: center;">
         <div style="width: 100%; ">
           <BarraScroll ref="scrollbar" :contentLength="contentLength" />
         </div>
         
-        <div class="zoom-svg" @click="aumenta">
+        <div class="zoom-svg" @click.prevent="aumenta">
           <svg-icon type="mdi" :path="mdiPlusCircle" ></svg-icon>
           
         </div>
-        <div class="zoom-svg" @click="scaleReturn">
+        <div class="zoom-svg" @click.prevent="scaleReturn">
           <svg-icon type="mdi" :path="mdiAlbum" ></svg-icon>
         </div>
-        <div class="zoom-svg" @click="disminuye">
+        <div class="zoom-svg" @click.prevent="disminuye">
           <svg-icon type="mdi" :path="mdiMinusCircle" ></svg-icon>
         </div>
       </div>
-
-    </div>
-
   </div>
 </template>
 
@@ -46,6 +47,7 @@ let arrayBuffer = ref(null)
 const contentLength = ref(0)
 const scrollbar = ref(null)
 const contCanvas = ref(null)
+let usporquarter=0
 let scale_temp = { x: 1, y: 1 }
 const color1 = '#8dbf8b'
 const color2 = '#fcf1d8'
@@ -89,18 +91,28 @@ const aumenta = () => {
   }
   scale.value.x = tempscale
   contentLength.value = totalWidth.value / scale.value.x
-  drawGrid()
-  drawRectangles()
+  scrollbar.value.scrollOffset = scrollbar.value.scrollOffset+20/tempscale
+
+
+
 
 }
 const disminuye = () => {
+  let tempscale = scale.value.x
   if (scale.value.x > 200) return
-  scale.value.x = scale.value.x + 10
+  else if (scale.value.x > 10) {
+    tempscale = scale.value.x + 5
+  }
+  else if (scale.value.x > 1) {
+    tempscale = scale.value.x + 1
+  }
+  else if (scale.value.x > 0) {
+    tempscale = scale.value.x + 0.1
+  }
+  scale.value.x = tempscale
   contentLength.value = totalWidth.value / scale.value.x
   console.log('scale',scale.value.x)
-  drawGrid()
-  drawRectangles()
-
+  scrollbar.value.scrollOffset = scrollbar.value.scrollOffset /tempscale
 }
 
 const scaleReturn = () => {
@@ -183,9 +195,9 @@ function updateSVG() {
 }
 function procesarMIDI() {
   pasoGrilla.value = midi.value.division
+  console.log('midi', midi.value)
   // Altura total basada en el rango de notas MIDI
   totalHeight.value = 128 * height_note.value
-  const color_relleno = color4
   // Escala para las notas MIDI
   let maxTime = 0
 
@@ -198,7 +210,13 @@ function procesarMIDI() {
     track.forEach((event, index) => {
 
       currentTime += event.delta
-      if (event.noteOn) {
+      if(event.timeSignature){
+        console.log('timeSignature',event.timeSignature)
+      } 
+      else if(event.setTempo){
+        usporquarter=event.setTempo.microsecondsPerQuarter
+        }
+      else if (event.noteOn) {
         if (!tempTracks[event.channel]) {
 
           tempTracks[event.channel] = []
@@ -261,7 +279,7 @@ function iniciarScroll(channel = 0) {
   contCanvas.value.scrollTo(firstposicionx.value, firstposiciony.value)
 }
 
-const { offsetX, pasoGrilla, list_text, rCanvas, ctx, rects, scale, drawGrid, drawRectangles, pickClick, pickDrag, pickRelease } = paintCanvas()
+const {gridcanvas, offsetX, pasoGrilla, list_text, rCanvas,grilla, rects, scale, drawGrid, drawRectangles, pickClick, pickDrag, pickRelease } = paintCanvas()
 
 
 onBeforeMount(async () => {
@@ -276,12 +294,26 @@ watch(
     }
   }
 )
+function convertirATiempo(cont){
+      const t = cont * usporquarter / 1000000;
+      const totalSeconds = Math.floor(t);
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = totalSeconds % 60;
+      const milliseconds = Math.floor((t - totalSeconds) * 1000);
+
+      return`${minutes}:${seconds}.${milliseconds}ms`;
+    }
 watch(
   () => Alltracks.value,
   (value) => {
-    if (value) {/* 
-        aqui deberia desplegar un menu de acciones */
-
+    if (value) {
+      grilla.value = []
+      let cont=0
+      for (let x = 0; x <= totalWidth.value; x += pasoGrilla.value) {
+     const text=convertirATiempo(cont)
+     grilla.value.push({"x":x,"text":`${text}`})
+     cont++
+    } 
       rects.value = value[0]
       if (totalWidth.value < 10000) {
         scale.value = { x: 1, y: 1 }
@@ -303,6 +335,7 @@ watch(
 let resizeObserver;
 function handleResize() {
   rCanvas.value.width = contCanvas.value.clientWidth
+  gridcanvas.value.style.width = `${contCanvas.value.clientWidth}px`
   drawGrid();
   drawRectangles()
 }
@@ -310,6 +343,7 @@ const debouncedHandleResize = debounce(handleResize, 300);
 onMounted(() => {
   console.log('anchoTotal', rCanvas.value.width, scale.value.x)
   rCanvas.value.width = contCanvas.value.clientWidth
+  gridcanvas.value.style.width = `${contCanvas.value.clientWidth}px`
   console.log('anchoTotal', rCanvas.value.width, scale.value.x)
   rCanvas.value.addEventListener("mousedown", pickClick);
   rCanvas.value.addEventListener("mousemove", pickDrag);
@@ -349,13 +383,13 @@ onUpdated(() => {
 #app,
 .cuerpo {
   width: 100%;
-  height: 100%;
+  height: 100vh;
   margin: 0px;
 }
 
 .cuerpo {
   flex-direction: column;
-  padding-right: 1rem;
+  padding-right: 0.5rem;
 }
 
 .contCanvas {
@@ -364,7 +398,10 @@ onUpdated(() => {
   overflow-y: auto;
   margin: 0%;
   padding: 0;
-  max-height: 90vh;
+}
+
+#gridcanvas {
+  height: 40px;
 }
 
 #visualization {
@@ -374,7 +411,7 @@ onUpdated(() => {
   min-height: 50vh;
   padding: 0;
   background-color: #f0f0f0;
-  max-height: 90vh;
+
 }
 
 .zoom-svg {
@@ -390,9 +427,9 @@ onUpdated(() => {
 @media (max-width: 1900px) {
   #visualization {
     width: 100%;
-    min-height: 60vh;
+    min-height: 50vh;
     background-color: #f0f0f0;
-    max-height: 90vh;
+    height: calc(100vh - 17px - 48px);
   }
 }
 </style>

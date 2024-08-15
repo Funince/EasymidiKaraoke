@@ -1,6 +1,6 @@
 <template>
     <div id="conteiner">
-        <h2>Ingrese la letra</h2>
+        <h2 class="no-select">Ingrese la letra</h2>
         <textarea ref="input_letra" id="input_letra"
             placeholder="Ingrese la letra de la canción separada por silaba con -" autofocus="true" spellcheck="false"
             dir="ltr" rows="1"></textarea>
@@ -50,4 +50,11 @@ const lyricsProcess = () => {
         background-color: transparent;
         font-family: "Inter", "Arial", "Helvetica", "sans-serif";
     }
+
+    .no-select {
+  user-select: none; /* Para la mayoría de los navegadores modernos */
+  -webkit-user-select: none; /* Para navegadores basados en WebKit */
+  -moz-user-select: none; /* Para Firefox */
+  -ms-user-select: none; /* Para Internet Explorer/Edge */
+}
 </style>
