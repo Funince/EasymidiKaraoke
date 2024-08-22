@@ -50,8 +50,8 @@ const updateData = (newData) => {
   /* Espaciado interno */
 }
 .content-large {
-  height: 80%;
-  
+  height: 100%;
+  max-height: 90vh;
 }
 .content-small {
   height: 100vh;
@@ -92,7 +92,7 @@ const updateData = (newData) => {
     flex: 3;
     max-width: 70vw;
     min-height: 70vh;
-    height: 100;
+    height: 100%;
   }
 
   .content-small {

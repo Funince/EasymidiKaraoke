@@ -1,46 +1,58 @@
 <template>
-  <div tabindex="3" @keydown.ctrl.up="aumenta" @keydown.ctrl.down="disminuye" class="cuerpo"  >
+  <div tabindex="3" @keydown.ctrl.up="aumenta" @keydown.ctrl.down="disminuye" class="cuerpo">
     <slot>
       <BarraMenu :listChannel="listChannel" @SelectChannel="seleccion" @aumenta="aumenta" @disminuye="disminuye" />
     </slot>
     <div style="height: 40px;">
       <canvas ref="gridcanvas" id="gridcanvas"></canvas>
-    </div >
+    </div>
     <div tabindex="2" ref="visualization" id="visualization">
 
       <div tabindex="1" ref="contCanvas" class="contCanvas">
         <canvas ref='rCanvas' id="idCanvas"></canvas>
-    </div>
-  </div>
-      <div style="display: flex ; align-items: center;">
-        <div style="width: 100%; ">
-          <BarraScroll ref="scrollbar" :contentLength="contentLength" />
-        </div>
-        
-        <div class="zoom-svg" @click.prevent="aumenta">
-          <svg-icon type="mdi" :path="mdiPlusCircle" ></svg-icon>
-          
-        </div>
-        <div class="zoom-svg" @click.prevent="scaleReturn">
-          <svg-icon type="mdi" :path="mdiAlbum" ></svg-icon>
-        </div>
-        <div class="zoom-svg" @click.prevent="disminuye">
-          <svg-icon type="mdi" :path="mdiMinusCircle" ></svg-icon>
-        </div>
       </div>
+    </div>
+    <div style="display: flex ; align-items: center; width: 100%; ">
+      <div style=" flex-grow: 1; max-width: calc(100% - 17*3px);">
+        <BarraScroll ref="scrollbar" :contentLength="contentLength" />
+      </div>
+
+      <div class="zoom-svg" @click.prevent="aumenta">
+        <svg-icon type="mdi" :path="mdiPlusCircle"></svg-icon>
+
+      </div>
+      <div class="zoom-svg" @click.prevent="scaleReturn">
+        <svg-icon type="mdi" :path="mdiAlbum"></svg-icon>
+      </div>
+      <div class="zoom-svg" @click.prevent="disminuye">
+        <svg-icon type="mdi" :path="mdiMinusCircle"></svg-icon>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
 import SvgIcon from '@jamescoyle/vue-icon';
-import { mdiPlusCircle, mdiMinusCircle ,mdiAlbum} from '@mdi/js';
-import BarraMenu from '@/components/BarraMenu.vue'
+import { mdiPlusCircle, mdiMinusCircle, mdiAlbum } from '@mdi/js';
+import BarraMenu from  "@/components/BarraMenu.vue"
 import BarraScroll from '@/components/BarraScroll.vue'
-import { debounce,clamp } from 'lodash'
+import { debounce, clamp } from 'lodash'
 import { parseArrayBuffer } from 'midi-json-parser'
 import { toRefs, ref, onMounted, onBeforeMount, onUnmounted, watch, onUpdated, computed } from 'vue'
 import { paintCanvas } from '@/components/utils/paintCanvas.js'
-const { offsetX, pasoGrilla, list_text, rCanvas, ctx, rects, scale, drawGrid, drawRectangles, pickClick, pickDrag, pickRelease } = paintCanvas()
+const { gridcanvas,
+  offsetX,
+  pasoGrilla,
+  list_text,
+  rCanvas,
+  grilla,
+  rects,
+  scale,
+  drawGrid,
+  drawRectangles,
+  pickClick,
+  pickDrag,
+  pickRelease } = paintCanvas()
 
 const listChannel = ref([]);
 let visualization = ref(null)
@@ -49,7 +61,7 @@ let arrayBuffer = ref(null)
 const contentLength = ref(0)
 const scrollbar = ref(null)
 const contCanvas = ref(null)
-let usporquarter=0
+let usporquarter = 0
 let scale_temp = { x: 1, y: 1 }
 const color1 = '#8dbf8b'
 const color2 = '#fcf1d8'
@@ -72,23 +84,19 @@ const props = defineProps({
   sharedData: Array,
 });
 const { sharedData } = toRefs(props);
-const tecla = () => {
-  console.log('tecla')
-    
-}
 const aumenta = () => {
   let tempscale = scale.value.x
-  const newescala=clamp(tempscale*0.75,0.25,200)
+  const newescala = clamp(tempscale * 0.75, 0.25, 50)
   scale.value.x = newescala
   contentLength.value = totalWidth.value / scale.value.x
-  scrollbar.value.scrollOffset = scrollbar.value.scrollOffset*tempscale/newescala
+  scrollbar.value.scrollOffset = scrollbar.value.scrollOffset * tempscale / newescala
   drawGrid()
   drawRectangles()
 
 }
 const disminuye = () => {
   let tempscale = scale.value.x
-  const newescala = clamp(tempscale / 0.75, 0.25, 200)
+  const newescala = clamp(tempscale / 0.75, 0.25, 50)
   scale.value.x = newescala
   contentLength.value = totalWidth.value / scale.value.x
   scrollbar.value.scrollOffset = scrollbar.value.scrollOffset * tempscale / newescala
@@ -99,8 +107,8 @@ const disminuye = () => {
 }
 
 const scaleReturn = () => {
-  scale.value.x=scale_temp.x
-  console.log('scale',scale.value.x)
+  scale.value.x = scale_temp.x
+  console.log('scale', scale.value.x)
   contentLength.value = totalWidth.value / scale.value.x
   drawGrid()
   drawRectangles()
@@ -193,12 +201,12 @@ function procesarMIDI() {
     track.forEach((event, index) => {
 
       currentTime += event.delta
-      if(event.timeSignature){
-        console.log('timeSignature',event.timeSignature)
-      } 
-      else if(event.setTempo){
-        usporquarter=event.setTempo.microsecondsPerQuarter
-        }
+      if (event.timeSignature) {
+        console.log('timeSignature', event.timeSignature)
+      }
+      else if (event.setTempo) {
+        usporquarter = event.setTempo.microsecondsPerQuarter
+      }
       else if (event.noteOn) {
         if (!tempTracks[event.channel]) {
 
@@ -277,26 +285,26 @@ watch(
     }
   }
 )
-function convertirATiempo(cont){
-      const t = cont * usporquarter / 1000000;
-      const totalSeconds = Math.floor(t);
-      const minutes = Math.floor(totalSeconds / 60);
-      const seconds = totalSeconds % 60;
-      const milliseconds = Math.floor((t - totalSeconds) * 1000);
+function convertirATiempo(cont) {
+  const t = cont * usporquarter / 1000000;
+  const totalSeconds = Math.floor(t);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  const milliseconds = Math.floor((t - totalSeconds) * 1000);
 
-      return`${minutes}:${seconds}.${milliseconds}ms`;
-    }
+  return `${minutes}:${seconds}.${milliseconds}ms`;
+}
 watch(
   () => Alltracks.value,
   (value) => {
     if (value) {
       grilla.value = []
-      let cont=0
+      let cont = 0
       for (let x = 0; x <= totalWidth.value; x += pasoGrilla.value) {
-     const text=convertirATiempo(cont)
-     grilla.value.push({"x":x,"text":`${text}`})
-     cont++
-    } 
+        const text = convertirATiempo(cont)
+        grilla.value.push({ "x": x, "text": `${text}` })
+        cont++
+      }
       rects.value = value[0]
       if (totalWidth.value < 10000) {
         scale.value = { x: 1, y: 1 }
@@ -307,7 +315,7 @@ watch(
         scale_temp.x = x
         scale.value = { x: x, y: 1 }
       }
-       
+
       contentLength.value = totalWidth.value / scale.value.x
       drawGrid();
       drawRectangles()
@@ -381,6 +389,7 @@ onUpdated(() => {
   overflow-y: auto;
   margin: 0%;
   padding: 0;
+
 }
 
 #gridcanvas {
@@ -389,12 +398,10 @@ onUpdated(() => {
 
 #visualization {
   width: 100%;
-  height: 100%;
-  position: relative;
   min-height: 50vh;
   padding: 0;
   background-color: #f0f0f0;
-
+  height: calc(100% - 58px - 17px - 40px);
 }
 
 .zoom-svg {
@@ -407,12 +414,17 @@ onUpdated(() => {
   height: 17px;
   display: block;
 }
-@media (max-width: 1900px) {
+
+@media (max-width:1024px) {
   #visualization {
     width: 100%;
-    min-height: 50vh;
+    min-height: 10vh;
     background-color: #f0f0f0;
-    height: calc(100vh - 17px - 48px);
+    flex-grow: 1;
+    height: calc(90vh - 58px - 17px - 40px)
+  }
+  .cuerpo {
+    height: 100%;
   }
 }
 </style>

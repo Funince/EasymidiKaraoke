@@ -6,7 +6,7 @@
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
+            <div class="collapse navbar-collapse " id="navbarNav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
 
                     <li class="nav-item dropdown">
@@ -24,19 +24,20 @@
                     </li>
                 </ul>
                 <ul class="navbar-nav ms-auto">
-                   
-                    <li v-if="!menuVisible" >
-                        <button class="nav-link" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+
+                    <li v-if="!menuVisible">
+                        <button class="nav-link" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
+                            aria-expanded="false">
                             Channel {{ channel }}
                         </button>
                     </li>
-                    <li v-if="menuVisible"  class="nav-item dropdown">
-                        <button class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false"
-                            >
+                    <li v-if="menuVisible" class="nav-item dropdown">
+                        <button class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
+                            data-bs-toggle="dropdown" aria-expanded="false">
                             Channel {{ channel }}
                         </button>
                         <ul class="dropdown-menu " aria-labelledby="navbarDropdown">
-                            <a  class="dropdown-item" href="#" v-for="(item, index) in menuItems" :key="index"
+                            <a class="dropdown-item" href="#" v-for="(item, index) in menuItems" :key="index"
                                 @click="selectItem(item)">
                                 {{ item }}
                             </a>
@@ -73,16 +74,9 @@ function selectItem(item) {
     channel.value = item;
     emit('SelectChannel',item)
 }
-const aumenta = () => {
-  emit('aumenta')
-}
-const disminuye = () => {
-  emit('disminuye')
-}
+
 </script>
 
 <style scoped>
-.navbar {
-    height: 3rem;
-}
+
 </style>

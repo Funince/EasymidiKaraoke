@@ -55,10 +55,6 @@ const LONG_PRESS_INTERVAL = 50
 const LONG_PRESS_SPEED = 0.5
 const SCROLL_BASE_AMOUNT = ref(20)
 const ArrowUP = ref(mdiArrowUpDropCircleOutline)
-
-const hola = () => {
-  console.log('hola')
-}
 const props = defineProps({
   isVertical: { Boolean, default: false },
 
