@@ -19,7 +19,7 @@
                             <li>
                                 <hr class="dropdown-divider">
                             </li>
-                            <li><a class="dropdown-item" href="#">Export format (.ass)</a></li>
+                            <li><a class="dropdown-item" href="#" @click.prevent="exportFormatAss">Export format (.ass)</a></li>
                         </ul>
                     </li>
                 </ul>
@@ -67,7 +67,9 @@ const menuItems = computed(() => {
     return props.listChannel;
 });
 
-
+function exportFormatAss() {
+    // Maneja la exportación del formato
+}
 
 function selectItem(item) {
     // Maneja la selección del ítem del menú

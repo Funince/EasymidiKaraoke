@@ -18,7 +18,7 @@ export function paintCanvas(
   const list_text = ref([])
   const pasoGrilla = ref(150)
   const offsetX = ref(0)
-  const grilla=ref([])
+  const grilla = ref([])
 
   height_note = height_note * scale.value.y
   // Dibujar la cuadrícula
@@ -30,13 +30,12 @@ export function paintCanvas(
   }
 
   function drawGrid() {
-    
     const blackKeys = new Set([1, 3, 6, 8, 10])
 
     // Crear rectángulos iniciales
 
     ctx.value.clearRect(0, 0, rCanvas.value.width, rCanvas.value.height)
-    
+
     // Aplicar la escala
 
     for (let i = 0; i < NOTAS_TOTAL; i++) {
@@ -65,54 +64,56 @@ export function paintCanvas(
   function paintGrid() {
     gridcanvas.value.width = rCanvas.value.width
     gridcanvas.value.height = 40
-    ctg.value.clearRect(0, 0,rCanvas.value.width, rCanvas.value.height)
+    ctg.value.clearRect(0, 0, rCanvas.value.width, rCanvas.value.height)
     ctg.value.strokeStyle = '#d0d0d0'
     const leftLimit = offsetX.value
-    const rightLimit = offsetX.value + rCanvas.value.width+10
-      
-    grilla.value.forEach((gr,index) => {
-      
-      const punto = (gr.x) / scale.value.x
-      if (punto <= rightLimit && punto >= leftLimit) {
-        const x = punto-offsetX.value 
-        
-      if(index%4==0){
-        ctx.value.lineWidth = 2; 
-        ctx.value.beginPath();
-        ctx.value.moveTo(x, 0);
-        ctx.value.lineTo(x, rCanvas.value.height);
-        ctx.value.stroke();
-        
+    const rightLimit = offsetX.value + rCanvas.value.width + 10
 
-        ctg.value.lineWidth = 2; 
-        ctg.value.beginPath();
-          ctg.value.moveTo(x, 40);
-          ctg.value.lineTo(x, 20);
-          ctg.value.stroke();
+    grilla.value.forEach((gr, index) => {
+      const punto = gr.x / scale.value.x
+      if (punto <= rightLimit && punto >= leftLimit) {
+        const x = punto - offsetX.value
+        let tamaño = (height_note / scale.value.x) * 10
+        //tamaño1 es el tamaño de la letra
+        let tamaño1 = tamaño > 20 ? 20 : tamaño
+
+        if (index % 4 == 0) {
+          ctx.value.lineWidth = 2
+          ctx.value.beginPath()
+          ctx.value.moveTo(x, 0)
+          ctx.value.lineTo(x, rCanvas.value.height)
+          ctx.value.stroke()
+
+          ctg.value.lineWidth = 2
+          ctg.value.beginPath()
+          ctg.value.moveTo(x, 40)
+          ctg.value.lineTo(x, 20)
+          ctg.value.stroke()
 
           ctg.value.fillStyle = whitecolor
-          let tamaño=height_note/scale.value.x*10
-          if(tamaño>20){
-          tamaño = 20
-          }
-        ctg.value.font = `${tamaño}px Arial`
-        ctg.value.fillText(gr.text, x, 20)
-    }
-    else{
-      ctx.value.lineWidth = 1; 
-      ctx.value.beginPath();
-        ctx.value.moveTo(x, 0);
-        ctx.value.lineTo(x, rCanvas.value.height);
-        ctx.value.stroke();
+          ctg.value.font = `${tamaño1}px Arial`
+          ctg.value.fillText(gr.text, x - 1, 20 - 1)
+        } else {
+          ctx.value.lineWidth = 1
+          ctx.value.beginPath()
+          ctx.value.moveTo(x, 0)
+          ctx.value.lineTo(x, rCanvas.value.height)
+          ctx.value.stroke()
 
-        ctg.value.lineWidth = 1; 
-        ctg.value.beginPath();
-          ctg.value.moveTo(x, 40);
-          ctg.value.lineTo(x, 30);
-          ctg.value.stroke();
+          ctg.value.lineWidth = 1
+          ctg.value.beginPath()
+          ctg.value.moveTo(x, 40)
+          ctg.value.lineTo(x, 30)
+          ctg.value.stroke()
+          if (tamaño > 35) {
+            ctg.value.fillStyle = whitecolor
+            ctg.value.font = `${20}px Arial`
+            ctg.value.fillText(gr.text, x - 30, 25)
+          }
+        }
       }
+    })
   }
-  })}
   // Dibujar el rectángulo
   function drawRectangles() {
     console.log('entro')
@@ -121,12 +122,11 @@ export function paintCanvas(
       const rightLimit = offsetX.value + rCanvas.value.width
       const puntoinicial = rect.x / scale.value.x
       const puntofinal = (rect.x + rect.width) / scale.value.x
-     
+
       if (puntoinicial < rightLimit && puntofinal > leftLimit) {
-        
         ctx.value.fillStyle = 'rgba(0, 128, 255, 0.5)'
         const y = rCanvas.value.height - rect.nota * height_note
-        const x = rect.x / scale.value.x-offsetX.value 
+        const x = rect.x / scale.value.x - offsetX.value
         ctx.value.fillRect(x, y, rect.width / scale.value.x, -height_note)
         ctx.value.strokeStyle = '#eef'
         ctx.value.lineWidth = 1

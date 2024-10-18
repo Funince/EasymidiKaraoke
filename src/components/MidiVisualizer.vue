@@ -3,23 +3,21 @@
     <slot>
       <BarraMenu :listChannel="listChannel" @SelectChannel="seleccion" @aumenta="aumenta" @disminuye="disminuye" />
     </slot>
-    <div style="height: 40px;">
+    <div style="height: 40px">
       <canvas ref="gridcanvas" id="gridcanvas"></canvas>
     </div>
     <div tabindex="2" ref="visualization" id="visualization">
-
       <div tabindex="1" ref="contCanvas" class="contCanvas">
-        <canvas ref='rCanvas' id="idCanvas"></canvas>
+        <canvas ref="rCanvas" id="idCanvas" @wheel="handleWheel"></canvas>
       </div>
     </div>
-    <div style="display: flex ; align-items: center; width: 100%; ">
-      <div style=" flex-grow: 1; max-width: calc(100% - 17*3px);">
+    <div style="display: flex; align-items: center; width: 100%">
+      <div style="flex-grow: 1; max-width: calc(100% - 17 * 3px)">
         <BarraScroll ref="scrollbar" :contentLength="contentLength" />
       </div>
 
       <div class="zoom-svg" @click.prevent="aumenta">
         <svg-icon type="mdi" :path="mdiPlusCircle"></svg-icon>
-
       </div>
       <div class="zoom-svg" @click.prevent="scaleReturn">
         <svg-icon type="mdi" :path="mdiAlbum"></svg-icon>
@@ -32,15 +30,16 @@
 </template>
 
 <script setup>
-import SvgIcon from '@jamescoyle/vue-icon';
-import { mdiPlusCircle, mdiMinusCircle, mdiAlbum } from '@mdi/js';
-import BarraMenu from  "@/components/BarraMenu.vue"
+import SvgIcon from '@jamescoyle/vue-icon'
+import { mdiPlusCircle, mdiMinusCircle, mdiAlbum } from '@mdi/js'
+import BarraMenu from '@/components/BarraMenu.vue'
 import BarraScroll from '@/components/BarraScroll.vue'
 import { debounce, clamp } from 'lodash'
 import { parseArrayBuffer } from 'midi-json-parser'
 import { toRefs, ref, onMounted, onBeforeMount, onUnmounted, watch, onUpdated, computed } from 'vue'
 import { paintCanvas } from '@/components/utils/paintCanvas.js'
-const { gridcanvas,
+const {
+  gridcanvas,
   offsetX,
   pasoGrilla,
   list_text,
@@ -52,9 +51,10 @@ const { gridcanvas,
   drawRectangles,
   pickClick,
   pickDrag,
-  pickRelease } = paintCanvas()
+  pickRelease
+} = paintCanvas()
 
-const listChannel = ref([]);
+const listChannel = ref([])
 let visualization = ref(null)
 let svg = ref(null)
 let arrayBuffer = ref(null)
@@ -73,7 +73,7 @@ let height = 0
 let totalHeight = ref(0)
 let totalWidth = ref(0)
 let midi = ref(null)
-let NOTAS_TOTAL = ref(128);
+let NOTAS_TOTAL = ref(128)
 let firstposiciony = ref(null)
 let firstposicionx = ref(null)
 let body = ref(null)
@@ -81,31 +81,46 @@ let height_note = ref(16)
 let tempTracks = {}
 const Alltracks = ref({})
 const props = defineProps({
-  sharedData: Array,
-});
-const { sharedData } = toRefs(props);
+  sharedData: Array
+})
+const { sharedData } = toRefs(props)
+
 const aumenta = () => {
   let tempscale = scale.value.x
   const newescala = clamp(tempscale * 0.75, 0.25, 50)
   scale.value.x = newescala
   contentLength.value = totalWidth.value / scale.value.x
-  scrollbar.value.scrollOffset = scrollbar.value.scrollOffset * tempscale / newescala
+  scrollbar.value.scrollOffset = (scrollbar.value.scrollOffset * tempscale) / newescala
   drawGrid()
   drawRectangles()
-
 }
 const disminuye = () => {
   let tempscale = scale.value.x
   const newescala = clamp(tempscale / 0.75, 0.25, 50)
   scale.value.x = newescala
   contentLength.value = totalWidth.value / scale.value.x
-  scrollbar.value.scrollOffset = scrollbar.value.scrollOffset * tempscale / newescala
+  scrollbar.value.scrollOffset = (scrollbar.value.scrollOffset * tempscale) / newescala
 
   drawGrid()
   drawRectangles()
-
 }
-
+const handleWheel = (event) => {
+  //la barra es igual al ancho - 47 px
+  const ancho = rCanvas.value.width - 47
+  const r = 100 / ancho
+  const mov = event.x * r * 2
+  if (event.ctrlKey) {
+    
+    event.preventDefault(); // Evita el comportamiento predeterminado del navegador
+    if (event.deltaY < 0) {
+      scrollbar.value.scrollOffset += mov
+      aumenta();
+    } else {
+      scrollbar.value.scrollOffset -= mov
+      disminuye();
+    }
+  }
+}
 const scaleReturn = () => {
   scale.value.x = scale_temp.x
   console.log('scale', scale.value.x)
@@ -113,7 +128,6 @@ const scaleReturn = () => {
   drawGrid()
   drawRectangles()
 }
-
 
 const seleccion = (value) => {
   if (Alltracks.value[value]) {
@@ -124,20 +138,15 @@ const seleccion = (value) => {
   }
 }
 
-watch(
-  sharedData,
-  (newValue) => {
-    newValue.forEach((oracion) => {
-      oracion.forEach((silaba) => {
+watch(sharedData, (newValue) => {
+  newValue.forEach((oracion) => {
+    oracion.forEach((silaba) => { })
+  })
+  list_text.value = newValue.flat()
 
-      })
-    })
-    list_text.value = newValue.flat()
-
-    drawGrid()
-    drawRectangles()
-  }
-);
+  drawGrid()
+  drawRectangles()
+})
 
 async function loadDefaultFile() {
   const url1 = '../La_camisa_negra.mid'
@@ -168,7 +177,6 @@ async function processFile() {
       procesarMIDI()
       Alltracks.value = tempTracks
       listChannel.value = Object.keys(tempTracks)
-
     } catch (error) {
       console.error('Error parsing MIDI file:', error)
     }
@@ -193,23 +201,18 @@ function procesarMIDI() {
   let maxTime = 0
 
   midi.value.tracks.forEach((track, trackIndex) => {
-
     let currentTime = 0
     const noteEvents = []
 
     // Construir una lista de eventos de notas con duraciones calculadas
     track.forEach((event, index) => {
-
       currentTime += event.delta
       if (event.timeSignature) {
         console.log('timeSignature', event.timeSignature)
-      }
-      else if (event.setTempo) {
+      } else if (event.setTempo) {
         usporquarter = event.setTempo.microsecondsPerQuarter
-      }
-      else if (event.noteOn) {
+      } else if (event.noteOn) {
         if (!tempTracks[event.channel]) {
-
           tempTracks[event.channel] = []
         }
         noteEvents.push({
@@ -227,8 +230,6 @@ function procesarMIDI() {
         if (noteOnEvent) {
           noteOnEvent.endTime = currentTime
           noteOnEvent.duration = currentTime - noteOnEvent.startTime
-
-
         }
         if (currentTime > maxTime) {
           maxTime = currentTime
@@ -257,8 +258,7 @@ function addItem(note) {
 }
 
 function note_yScale(e) {
-
-  return 0 + (e - 0) * (totalHeight.value - 0) / (NOTAS_TOTAL.value - 0)
+  return 0 + ((e - 0) * (totalHeight.value - 0)) / (NOTAS_TOTAL.value - 0)
 }
 
 function iniciarScroll(channel = 0) {
@@ -270,9 +270,6 @@ function iniciarScroll(channel = 0) {
   contCanvas.value.scrollTo(firstposicionx.value, firstposiciony.value)
 }
 
-
-
-
 onBeforeMount(async () => {
   loadDefaultFile()
 })
@@ -280,19 +277,19 @@ watch(
   () => arrayBuffer.value,
   (value) => {
     if (value) {
-      drawGrid();
+      drawGrid()
       processFile()
     }
   }
 )
 function convertirATiempo(cont) {
-  const t = cont * usporquarter / 1000000;
-  const totalSeconds = Math.floor(t);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  const milliseconds = Math.floor((t - totalSeconds) * 1000);
+  const t = (cont * usporquarter) / 1000000
+  const totalSeconds = Math.floor(t)
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  const milliseconds = Math.floor((t - totalSeconds) * 1000)
 
-  return `${minutes}:${seconds}.${milliseconds}ms`;
+  return `${minutes}:${seconds}.${milliseconds}`
 }
 watch(
   () => Alltracks.value,
@@ -302,14 +299,13 @@ watch(
       let cont = 0
       for (let x = 0; x <= totalWidth.value; x += pasoGrilla.value) {
         const text = convertirATiempo(cont)
-        grilla.value.push({ "x": x, "text": `${text}` })
+        grilla.value.push({ x: x, text: `${text}` })
         cont++
       }
       rects.value = value[0]
       if (totalWidth.value < 10000) {
         scale.value = { x: 1, y: 1 }
-      }
-      else {
+      } else {
         const x = 10 * Math.round(totalWidth.value / 10000 / 10)
         console.log('x', x)
         scale_temp.x = x
@@ -317,58 +313,51 @@ watch(
       }
 
       contentLength.value = totalWidth.value / scale.value.x
-      drawGrid();
+      drawGrid()
       drawRectangles()
       iniciarScroll()
     }
   }
 )
-let resizeObserver;
+let resizeObserver
 function handleResize() {
   rCanvas.value.width = contCanvas.value.clientWidth
   gridcanvas.value.style.width = `${contCanvas.value.clientWidth}px`
-  drawGrid();
+  drawGrid()
   drawRectangles()
 }
-const debouncedHandleResize = debounce(handleResize, 300);
+
 onMounted(() => {
+  const debouncedHandleResize = debounce(handleResize, 300)
   console.log('anchoTotal', rCanvas.value.width, scale.value.x)
   rCanvas.value.width = contCanvas.value.clientWidth
   gridcanvas.value.style.width = `${contCanvas.value.clientWidth}px`
   console.log('anchoTotal', rCanvas.value.width, scale.value.x)
-  rCanvas.value.addEventListener("mousedown", pickClick);
-  rCanvas.value.addEventListener("mousemove", pickDrag);
-  rCanvas.value.addEventListener("mouseup", pickRelease);
+  rCanvas.value.addEventListener('mousedown', pickClick)
+  rCanvas.value.addEventListener('mousemove', pickDrag)
+  rCanvas.value.addEventListener('mouseup', pickRelease)
   if (visualization.value) {
     resizeObserver = new ResizeObserver(debouncedHandleResize)
-    resizeObserver.observe(visualization.value);
+    resizeObserver.observe(visualization.value)
   }
   watch(
     () => scrollbar.value.scrollOffset,
     (value) => {
-
       console.log(value)
       offsetX.value = value
       drawGrid()
       drawRectangles()
-
     }
   )
-
 })
-onUpdated(() => {
-
-})
-
+onUpdated(() => { })
 
 /*  onUnmounted(() => {
    rCanvas.value.removeEventListener("mousedown", pickClick);
    rCanvas.value.removeEventListener("mousemove", pickDrag);
    rCanvas.value.removeEventListener("mouseup", pickRelease);
  }) */
-
 </script>
-
 
 <style>
 #app,
@@ -389,7 +378,6 @@ onUpdated(() => {
   overflow-y: auto;
   margin: 0%;
   padding: 0;
-
 }
 
 #gridcanvas {
@@ -415,14 +403,15 @@ onUpdated(() => {
   display: block;
 }
 
-@media (max-width:1024px) {
+@media (max-width: 1024px) {
   #visualization {
     width: 100%;
     min-height: 10vh;
     background-color: #f0f0f0;
     flex-grow: 1;
-    height: calc(90vh - 58px - 17px - 40px)
+    height: calc(90vh - 58px - 17px - 40px);
   }
+
   .cuerpo {
     height: 100%;
   }
