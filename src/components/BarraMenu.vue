@@ -19,7 +19,7 @@
                             <li>
                                 <hr class="dropdown-divider">
                             </li>
-                            <li><a class="dropdown-item" href="#" @click.prevent="exportFormatAss">Export format (.ass)</a></li>
+                            <li><a class="dropdown-item" href="#" @click.prevent="exptAss">Export format (.ass)</a></li>
                         </ul>
                     </li>
                 </ul>
@@ -54,8 +54,8 @@
 
 <script setup>
 
-import { computed, ref } from 'vue';
-const emit = defineEmits([ 'SelectChannel']);
+import { computed, ref, watch } from 'vue';
+const emit = defineEmits([ 'SelectChannel','exptAss']);
 
 const props = defineProps({
   listChannel:{ Array,default: ["0"]},
@@ -67,8 +67,14 @@ const menuItems = computed(() => {
     return props.listChannel;
 });
 
-function exportFormatAss() {
-    // Maneja la exportación del formato
+watch(() => props.listChannel, (newList) => {
+    if (newList.length > 0) {
+        channel.value = newList[0];
+    }
+}, { immediate: true });
+
+function exptAss() {
+    emit('exptAss')// Maneja la exportación del formato
 }
 
 function selectItem(item) {

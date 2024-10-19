@@ -7,9 +7,9 @@
         <button class="btn btn-secondary w-100  m-1" @click="lyricsProcess">
             Procesar letra
         </button>
-    <p v-if="texto_dividido">
+    <!-- <p v-if="texto_dividido">
         {{ texto_dividido }}
-    </p>
+    </p> -->
     </div>
 </template>
 

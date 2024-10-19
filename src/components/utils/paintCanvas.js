@@ -15,7 +15,7 @@ export function paintCanvas(
   const startX = ref(0)
   const startY = ref(0)
   const scale = ref({ x: 1, y: 1 }) // Factores de escala para x e y
-  const list_text = ref([])
+  const list_text = ref([]) // Lista de textos para las notas
   const pasoGrilla = ref(150)
   const offsetX = ref(0)
   const grilla = ref([])
@@ -29,6 +29,23 @@ export function paintCanvas(
     return noteName ? `${noteName}${octave}` : ''
   }
 
+  function exportData() {
+      const data = []
+      
+      for (let index = 0; index < rects.value.length; index++) {
+        if (list_text.value.length > index) {
+          const rect = rects.value[index]
+          const silaba = list_text.value[index]
+          const startTime = rect.x
+          const endTime = rect.x + rect.width
+          data.push([silaba, startTime, endTime])
+        } else {
+          
+          break // Termina cuando no existan más sílabas
+        }
+      }
+     return data
+  }
   function drawGrid() {
     const blackKeys = new Set([1, 3, 6, 8, 10])
 
@@ -116,7 +133,6 @@ export function paintCanvas(
   }
   // Dibujar el rectángulo
   function drawRectangles() {
-    console.log('entro')
     rects.value.forEach((rect, index) => {
       const leftLimit = offsetX.value
       const rightLimit = offsetX.value + rCanvas.value.width
@@ -135,7 +151,7 @@ export function paintCanvas(
         ctx.value.fillStyle = 'black'
         ctx.value.font = `${height_note}px Arial`
         ctx.value.fillText(textNota, x, y)
-        if (list_text.value.length > index + 1) {
+        if (list_text.value.length > index ) {
           ctx.value.fillStyle = 'black'
           ctx.value.font = `${height_note}px Arial`
           ctx.value.fillText(list_text.value[index], x, y + height_note)
@@ -221,6 +237,7 @@ export function paintCanvas(
     grilla,
     rects,
     scale,
+    exportData,
     drawGrid,
     drawRectangles,
     pickClick,

@@ -1,7 +1,8 @@
 <template>
   <div tabindex="3" @keydown.ctrl.up="aumenta" @keydown.ctrl.down="disminuye" class="cuerpo">
     <slot>
-      <BarraMenu :listChannel="listChannel" @SelectChannel="seleccion" @aumenta="aumenta" @disminuye="disminuye" />
+      <BarraMenu :listChannel="listChannel" @SelectChannel="seleccion" @aumenta="aumenta" @disminuye="disminuye"
+        @exptAss="exptAss" />
     </slot>
     <div style="height: 40px">
       <canvas ref="gridcanvas" id="gridcanvas"></canvas>
@@ -30,6 +31,7 @@
 </template>
 
 <script setup>
+import formatAss from '@/components/utils/formatAss.js';
 import SvgIcon from '@jamescoyle/vue-icon'
 import { mdiPlusCircle, mdiMinusCircle, mdiAlbum } from '@mdi/js'
 import BarraMenu from '@/components/BarraMenu.vue'
@@ -51,7 +53,8 @@ const {
   drawRectangles,
   pickClick,
   pickDrag,
-  pickRelease
+  pickRelease,
+  exportData
 } = paintCanvas()
 
 const listChannel = ref([])
@@ -79,6 +82,7 @@ let firstposicionx = ref(null)
 let body = ref(null)
 let height_note = ref(16)
 let tempTracks = {}
+let oraciones=ref([])
 const Alltracks = ref({})
 const props = defineProps({
   sharedData: Array
@@ -110,7 +114,7 @@ const handleWheel = (event) => {
   const r = 100 / ancho
   const mov = event.x * r * 2
   if (event.ctrlKey) {
-    
+
     event.preventDefault(); // Evita el comportamiento predeterminado del navegador
     if (event.deltaY < 0) {
       scrollbar.value.scrollOffset += mov
@@ -132,6 +136,7 @@ const scaleReturn = () => {
 const seleccion = (value) => {
   if (Alltracks.value[value]) {
     rects.value = Alltracks.value[value]
+    
     drawGrid()
     drawRectangles()
     iniciarScroll(value)
@@ -139,14 +144,75 @@ const seleccion = (value) => {
 }
 
 watch(sharedData, (newValue) => {
-  newValue.forEach((oracion) => {
-    oracion.forEach((silaba) => { })
-  })
+  oraciones.value = newValue
   list_text.value = newValue.flat()
 
   drawGrid()
   drawRectangles()
 })
+const convertirTicksATiempo = (ticks, usporquarter, ticksPorNegra) => {
+  const tiempoMs = (ticks * usporquarter) / ticksPorNegra / 1000;
+  const totalSeconds = Math.floor(tiempoMs / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  const milliseconds = Math.floor(tiempoMs % 1000);
+
+  // Asegúrate de que los valores estén formateados correctamente
+  const formattedMinutes = String(minutes).padStart(2, '0');
+  const formattedSeconds = String(seconds).padStart(2, '0');
+  const formattedMilliseconds = String(milliseconds).padStart(3, '0');
+
+  return `${formattedMinutes}:${formattedSeconds}.${formattedMilliseconds}`;
+};
+
+const agruparSilabas = (data, grupos) => {
+  let agrupado = [];
+  let index = 0;
+
+  grupos.forEach(grupo => {
+    let startTime = data[index][1];
+    console.log('startTime', grupo, data[index][1], data[index][2]);
+    let endTime = data[index + grupo.length - 1][2];
+    let silabas = grupo.map((silaba, i) => {
+      const duracion = data[index + i][2] - data[index + i][1];
+      return "{" + `\\k${Math.floor(duracion / 10)}` + "}" + `${silaba}`;
+    }).join('');
+
+    agrupado.push({
+      silaba: silabas,
+      startTime: convertirTicksATiempo(startTime, usporquarter, pasoGrilla.value),
+      endTime: convertirTicksATiempo(endTime, usporquarter, pasoGrilla.value)
+    });
+
+    index += grupo.length;
+  });
+
+  return agrupado;
+};
+
+const exptAss = () => {
+  let data = exportData()
+  console.log('exportar', data);
+
+  if (data.length< oraciones.value.flat().length){
+    alert('No hay suficientes notas para las silabas')
+    return
+  }
+  data= agruparSilabas(data, oraciones.value)
+
+  
+  console.log('exportar', data);
+  const assContent = formatAss(data);
+  console.log('assContent', assContent);
+
+  // Crear un archivo .ass y descargarlo
+   const blob = new Blob([assContent], { type: 'text/plain;charset=utf-8' });
+   const link = document.createElement('a');
+   link.href = URL.createObjectURL(blob);
+   link.download = 'subtitles.ass';
+   link.click();
+
+}
 
 async function loadDefaultFile() {
   const url1 = '../La_camisa_negra.mid'
@@ -176,7 +242,9 @@ async function processFile() {
       console.log('procesando archivo')
       procesarMIDI()
       Alltracks.value = tempTracks
+      
       listChannel.value = Object.keys(tempTracks)
+      
     } catch (error) {
       console.error('Error parsing MIDI file:', error)
     }
@@ -302,7 +370,7 @@ watch(
         grilla.value.push({ x: x, text: `${text}` })
         cont++
       }
-      rects.value = value[0]
+      rects.value = value[listChannel.value[0]] 
       if (totalWidth.value < 10000) {
         scale.value = { x: 1, y: 1 }
       } else {
@@ -315,7 +383,7 @@ watch(
       contentLength.value = totalWidth.value / scale.value.x
       drawGrid()
       drawRectangles()
-      iniciarScroll()
+      iniciarScroll(listChannel.value[0])
     }
   }
 )
@@ -343,7 +411,6 @@ onMounted(() => {
   watch(
     () => scrollbar.value.scrollOffset,
     (value) => {
-      console.log(value)
       offsetX.value = value
       drawGrid()
       drawRectangles()
