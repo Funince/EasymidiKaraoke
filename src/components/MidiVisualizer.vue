@@ -2,7 +2,7 @@
   <div tabindex="3" @keydown.ctrl.up="aumenta" @keydown.ctrl.down="disminuye" class="cuerpo">
     <slot>
       <BarraMenu :listChannel="listChannel" @SelectChannel="seleccion" @aumenta="aumenta" @disminuye="disminuye"
-        @exptAss="exptAss" />
+        @exptAss="exptAss" @exptSrt="exptSrt" />
     </slot>
     <div style="height: 40px">
       <canvas ref="gridcanvas" id="gridcanvas"></canvas>
@@ -31,6 +31,7 @@
 </template>
 
 <script setup>
+import { formatSrt, agruparSilabasSrt } from '@/components/utils/formatSrt';
 import formatAss from '@/components/utils/formatAss.js';
 import SvgIcon from '@jamescoyle/vue-icon'
 import { mdiPlusCircle, mdiMinusCircle, mdiAlbum } from '@mdi/js'
@@ -82,7 +83,7 @@ let firstposicionx = ref(null)
 let body = ref(null)
 let height_note = ref(16)
 let tempTracks = {}
-let oraciones=ref([])
+let oraciones = ref([])
 const Alltracks = ref({})
 const props = defineProps({
   sharedData: Array
@@ -136,7 +137,7 @@ const scaleReturn = () => {
 const seleccion = (value) => {
   if (Alltracks.value[value]) {
     rects.value = Alltracks.value[value]
-    
+
     drawGrid()
     drawRectangles()
     iniciarScroll(value)
@@ -194,26 +195,46 @@ const exptAss = () => {
   let data = exportData()
   console.log('exportar', data);
 
-  if (data.length< oraciones.value.flat().length){
+  if (data.length < oraciones.value.flat().length) {
     alert('No hay suficientes notas para las silabas')
     return
   }
-  data= agruparSilabas(data, oraciones.value)
+  data = agruparSilabas(data, oraciones.value)
 
-  
+
   console.log('exportar', data);
   const assContent = formatAss(data);
   console.log('assContent', assContent);
 
   // Crear un archivo .ass y descargarlo
-   const blob = new Blob([assContent], { type: 'text/plain;charset=utf-8' });
-   const link = document.createElement('a');
-   link.href = URL.createObjectURL(blob);
-   link.download = 'subtitles.ass';
-   link.click();
+  const blob = new Blob([assContent], { type: 'text/plain;charset=utf-8' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'subtitles.ass';
+  link.click();
 
 }
+const exptSrt = () => {
+  let data = exportData();
+  console.log('exportar', data);
 
+  if (data.length < oraciones.value.flat().length) {
+    alert('No hay suficientes notas para las silabas');
+    return;
+  }
+  data = agruparSilabasSrt(data, oraciones.value, usporquarter, pasoGrilla.value);
+
+  console.log('exportar', data);
+  const srtContent = formatSrt(data);
+  console.log('srtContent', srtContent);
+
+  // Crear un archivo .srt y descargarlo
+  const blob = new Blob([srtContent], { type: 'text/plain;charset=utf-8' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'subtitles.srt';
+  link.click();
+};
 async function loadDefaultFile() {
   const url1 = '../La_camisa_negra.mid'
   const url2 = '../prueba audio2.mid'
@@ -242,9 +263,9 @@ async function processFile() {
       console.log('procesando archivo')
       procesarMIDI()
       Alltracks.value = tempTracks
-      
+
       listChannel.value = Object.keys(tempTracks)
-      
+
     } catch (error) {
       console.error('Error parsing MIDI file:', error)
     }
@@ -370,7 +391,7 @@ watch(
         grilla.value.push({ x: x, text: `${text}` })
         cont++
       }
-      rects.value = value[listChannel.value[0]] 
+      rects.value = value[listChannel.value[0]]
       if (totalWidth.value < 10000) {
         scale.value = { x: 1, y: 1 }
       } else {

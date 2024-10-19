@@ -20,6 +20,7 @@
                                 <hr class="dropdown-divider">
                             </li>
                             <li><a class="dropdown-item" href="#" @click.prevent="exptAss">Export format (.ass)</a></li>
+                            <li><a class="dropdown-item" href="#" @click.prevent="exptSrt">Export format (.srt)</a></li>
                         </ul>
                     </li>
                 </ul>
@@ -55,7 +56,7 @@
 <script setup>
 
 import { computed, ref, watch } from 'vue';
-const emit = defineEmits([ 'SelectChannel','exptAss']);
+const emit = defineEmits([ 'SelectChannel','exptAss','exptSrt']);
 
 const props = defineProps({
   listChannel:{ Array,default: ["0"]},
@@ -75,6 +76,10 @@ watch(() => props.listChannel, (newList) => {
 
 function exptAss() {
     emit('exptAss')// Maneja la exportación del formato
+}
+
+function exptSrt() {
+    emit('exptSrt')// Maneja la exportación del formato
 }
 
 function selectItem(item) {
