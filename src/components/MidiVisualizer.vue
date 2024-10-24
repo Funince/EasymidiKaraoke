@@ -1,8 +1,10 @@
 <template>
+  <ColorPickerModal :isVisible="isColorPickerVisible" @accept="exptSrt" @cancel="hideColorPicker" />
+
   <div tabindex="3" @keydown.ctrl.up="aumenta" @keydown.ctrl.down="disminuye" class="cuerpo">
     <slot>
       <BarraMenu :listChannel="listChannel" @SelectChannel="seleccion" @aumenta="aumenta" @disminuye="disminuye"
-        @exptAss="exptAss" @exptSrt="exptSrt" />
+        @exptAss="exptAss" @exptSrt="showColorPicker" />
     </slot>
     <div style="height: 40px">
       <canvas ref="gridcanvas" id="gridcanvas"></canvas>
@@ -31,12 +33,13 @@
 </template>
 
 <script setup>
-import { formatSrt, agruparSilabasSrt } from '@/components/utils/formatSrt';
+import { formatSrt, agruparSilabasSrt, formatSrtcolor } from '@/components/utils/formatSrt';
 import formatAss from '@/components/utils/formatAss.js';
 import SvgIcon from '@jamescoyle/vue-icon'
 import { mdiPlusCircle, mdiMinusCircle, mdiAlbum } from '@mdi/js'
 import BarraMenu from '@/components/BarraMenu.vue'
 import BarraScroll from '@/components/BarraScroll.vue'
+import ColorPickerModal from '@/components/ColorPickerModal.vue'
 import { debounce, clamp } from 'lodash'
 import { parseArrayBuffer } from 'midi-json-parser'
 import { toRefs, ref, onMounted, onBeforeMount, onUnmounted, watch, onUpdated, computed } from 'vue'
@@ -67,6 +70,7 @@ const scrollbar = ref(null)
 const contCanvas = ref(null)
 let usporquarter = 0
 let scale_temp = { x: 1, y: 1 }
+const selectedColor = ref('#ff5500');
 const color1 = '#8dbf8b'
 const color2 = '#fcf1d8'
 const color3 = '#fadc9c'
@@ -89,6 +93,7 @@ const props = defineProps({
   sharedData: Array
 })
 const { sharedData } = toRefs(props)
+const isColorPickerVisible = ref(false);
 
 const aumenta = () => {
   let tempscale = scale.value.x
@@ -214,10 +219,18 @@ const exptAss = () => {
   link.click();
 
 }
-const exptSrt = () => {
+const showColorPicker = () => {
+  isColorPickerVisible.value = true;
+};
+const hideColorPicker = () => {
+  isColorPickerVisible.value = false;
+
+}
+const exptSrt = ({ color, isColorEnabled }) => {
+  let srtContent;
+  hideColorPicker();
   let data = exportData();
   console.log('exportar', data);
-
   if (data.length < oraciones.value.flat().length) {
     alert('No hay suficientes notas para las silabas');
     return;
@@ -225,7 +238,14 @@ const exptSrt = () => {
   data = agruparSilabasSrt(data, oraciones.value, usporquarter, pasoGrilla.value);
 
   console.log('exportar', data);
-  const srtContent = formatSrt(data);
+  if (isColorEnabled) {
+    srtContent = formatSrtcolor(data, color.value);
+  }
+  else {
+    srtContent = formatSrt(data);
+  }
+
+
   console.log('srtContent', srtContent);
 
   // Crear un archivo .srt y descargarlo
