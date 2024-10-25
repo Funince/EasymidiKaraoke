@@ -4,7 +4,7 @@
   <div tabindex="3" @keydown.ctrl.up="aumenta" @keydown.ctrl.down="disminuye" class="cuerpo">
     <slot>
       <BarraMenu :listChannel="listChannel" @SelectChannel="seleccion" @aumenta="aumenta" @disminuye="disminuye"
-        @exptAss="exptAss" @exptSrt="showColorPicker" />
+        @exptAss="exptAss" @exptSrt="showColorPicker" @fileSelect="handleFileUpload" />
     </slot>
     <div style="height: 40px">
       <canvas ref="gridcanvas" id="gridcanvas"></canvas>
@@ -201,7 +201,7 @@ const exptAss = () => {
   console.log('exportar', data);
 
   if (data.length < oraciones.value.flat().length) {
-    alert('No hay suficientes notas para las silabas')
+    alert('There are not enough notes for the syllables')
     return
   }
   data = agruparSilabas(data, oraciones.value)
@@ -255,26 +255,27 @@ const exptSrt = ({ color, isColorEnabled }) => {
   link.download = 'subtitles.srt';
   link.click();
 };
-async function loadDefaultFile() {
-  const url1 = '../La_camisa_negra.mid'
-  const url2 = '../prueba audio2.mid'
-  fetch(url1)
-    .then((response) => response.arrayBuffer())
-    .then((data) => {
-      arrayBuffer.value = data
-    })
-}
-function handleFileUpload(event) {
-  file = event.target.files[0]
+// async function loadDefaultFile() {
+//   const url1 = '../La_camisa_negra.mid'
+//   const url2 = '../prueba audio2.mid'
+//   fetch(url1)
+//     .then((response) => response.arrayBuffer())
+//     .then((data) => {
+//       arrayBuffer.value = data
+//     })
+// }
+function handleFileUpload(file) {
   if (file) {
+    console.log('file', file)
     const reader = new FileReader()
     reader.onload = (e) => {
       arrayBuffer.value = e.target.result
-    }
-    reader.readAsArrayBuffer(file)
+    };
+    reader.readAsArrayBuffer(file);
   }
 }
 async function processFile() {
+  tempTracks = {}
   if (arrayBuffer.value) {
     try {
       const clonedArrayBuffer = arrayBuffer.value.slice(0)
@@ -283,9 +284,7 @@ async function processFile() {
       console.log('procesando archivo')
       procesarMIDI()
       Alltracks.value = tempTracks
-
       listChannel.value = Object.keys(tempTracks)
-
     } catch (error) {
       console.error('Error parsing MIDI file:', error)
     }
@@ -366,10 +365,6 @@ function addItem(note) {
   })
 }
 
-function note_yScale(e) {
-  return 0 + ((e - 0) * (totalHeight.value - 0)) / (NOTAS_TOTAL.value - 0)
-}
-
 function iniciarScroll(channel = 0) {
   const yPos = totalHeight.value - tempTracks[channel][0].nota * height_note.value
   firstposiciony.value = (yPos - height / 2) / scale.value.y
@@ -379,18 +374,15 @@ function iniciarScroll(channel = 0) {
   contCanvas.value.scrollTo(firstposicionx.value, firstposiciony.value)
 }
 
-onBeforeMount(async () => {
-  loadDefaultFile()
-})
-watch(
-  () => arrayBuffer.value,
-  (value) => {
-    if (value) {
-      drawGrid()
-      processFile()
-    }
+// onBeforeMount(async () => {
+//   loadDefaultFile()
+// })
+watch(arrayBuffer, (value) => {
+  if (value) {
+    drawGrid();
+    processFile();
   }
-)
+});
 function convertirATiempo(cont) {
   const t = (cont * usporquarter) / 1000000
   const totalSeconds = Math.floor(t)
@@ -412,10 +404,12 @@ watch(
         cont++
       }
       rects.value = value[listChannel.value[0]]
+      console.log("total",totalWidth.value)
       if (totalWidth.value < 10000) {
         scale.value = { x: 1, y: 1 }
-      } else {
-        const x = 10 * Math.round(totalWidth.value / 10000 / 10)
+      } else { //sirve para que el zoom sea proporcional al ancho del canvas
+        const t = Math.round(totalWidth.value / 10000 / 10) || 1
+        const x = 10 * t
         console.log('x', x)
         scale_temp.x = x
         scale.value = { x: x, y: 1 }

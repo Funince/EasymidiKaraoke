@@ -1,5 +1,5 @@
 <template>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark ">
         <div class="container-fluid">
             <a class="navbar-brand" href="#">EasyKaraoke</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
@@ -15,7 +15,12 @@
                             File
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
-                            <li><a class="dropdown-item" href="#">New file</a></li>
+                            <li>
+                                <a class="dropdown-item" href="#" @click.prevent="triggerFileInput">New file</a>
+                                <input type="file" ref="fileInput" accept=".mid,.midi" @change="fileSelect"
+                                    style="display: none;">
+
+                            </li>
                             <li>
                                 <hr class="dropdown-divider">
                             </li>
@@ -56,13 +61,14 @@
 <script setup>
 
 import { computed, ref, watch } from 'vue';
-const emit = defineEmits([ 'SelectChannel','exptAss','exptSrt']);
+const fileInput = ref(null);
+const emit = defineEmits(['SelectChannel', 'exptAss', 'exptSrt', 'fileSelect']);
 
 const props = defineProps({
-  listChannel:{ Array,default: ["0"]},
+    listChannel: { Array, default: ["0"] },
 });
 const channel = ref("0");
-const menuVisible=computed(()=>props.listChannel.length>1?true:false)
+const menuVisible = computed(() => props.listChannel.length > 1 ? true : false)
 
 const menuItems = computed(() => {
     return props.listChannel;
@@ -73,6 +79,19 @@ watch(() => props.listChannel, (newList) => {
         channel.value = newList[0];
     }
 }, { immediate: true });
+
+const triggerFileInput = () => {
+    // Maneja la apertura del diálogo de selección de archivo
+    fileInput.value.click();
+}
+
+function fileSelect(event) {
+    const file = event.target.files[0];
+    if (file) {
+        // Emitir el archivo seleccionado al componente padre
+        emit('fileSelect', file);
+    }
+}
 
 function exptAss() {
     emit('exptAss')// Maneja la exportación del formato
@@ -85,11 +104,9 @@ function exptSrt() {
 function selectItem(item) {
     // Maneja la selección del ítem del menú
     channel.value = item;
-    emit('SelectChannel',item)
+    emit('SelectChannel', item)
 }
 
 </script>
 
-<style scoped>
-
-</style>
+<style scoped></style>

@@ -1,7 +1,7 @@
 <template>
     <dialog ref="dialog" class="centered-dialog">
         <form method="dialog" @submit.prevent="accept">
-            <h3>Selecciona un color</h3>
+            <h3>Select a color</h3>
             <div class="color-input">
                 <input type="color" v-model="color" :disabled="!isColorEnabled" />
                 <input type="text" v-model="hexColor" class="color-hex-input" :disabled="!isColorEnabled" />
@@ -11,8 +11,8 @@
                 <input type="checkbox" v-model="isColorEnabled" />
             </div>
             <div class="modal-actions">
-                <button type="button" @click="cancel">Cancelar</button>
-                <button type="submit">Aceptar</button>
+                <button type="button" @click="cancel">Cancel</button>
+                <button type="submit">Accept</button>
             </div>
         </form>
     </dialog>
