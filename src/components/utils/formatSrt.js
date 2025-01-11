@@ -1,11 +1,11 @@
 // Función para formatear los datos en formato SRT
-export const formatSrtcolor = (data, color) => {
+export const formatSrtcolor = (data, color, delay = 0) => {
   let srtContent = ''
 
   data.forEach((item, index) => {
     item.silabas.forEach((silaba, silabaIndex) => {
-      const startTime = silaba.startTime
-      const endTime = silaba.endTime
+      const startTime = addDelay(silaba.startTime, delay)
+      const endTime = addDelay(silaba.endTime, delay)
       const oracion = item.oracion
       let texto = item.silabas
         .map((s, i) => (i <= silabaIndex ? `<font color='${color}'>${s.texto}</font>` : s.texto))
@@ -19,11 +19,11 @@ export const formatSrtcolor = (data, color) => {
   return srtContent
 }
 
-export const formatSrt = (data) => {
+export const formatSrt = (data, delay = 0) => {
   return data
     .map((item, index) => {
-      const startTime = item.startTime
-      const endTime = item.endTime
+      const startTime = addDelay(item.startTime, delay)
+      const endTime = addDelay(item.endTime, delay)
       console.log('texto:', item.silabas)
       const texto = item.oracion // Reemplazar $ por espacios
       return `${index + 1}\n${startTime} --> ${endTime}\n${texto}\n`
@@ -48,6 +48,22 @@ const convertirTicksATiempo = (ticks, usporquarter, ticksPorNegra) => {
   const formattedMilliseconds = String(milliseconds).padStart(3, '0')
 
   return `${formattedHours}:${formattedMinutes}:${formattedSeconds},${formattedMilliseconds}`
+}
+
+const addDelay = (timeStr, delaySeconds) => {
+  const [hours, minutes, seconds] = timeStr.split(':')
+  const [secs, ms] = seconds.split(',')
+
+  let totalMs =
+    (parseInt(hours) * 3600 + parseInt(minutes) * 60 + parseInt(secs)) * 1000 + parseInt(ms)
+  totalMs += delaySeconds * 1000
+
+  const newHours = Math.floor(totalMs / (3600 * 1000))
+  const newMinutes = Math.floor((totalMs % (3600 * 1000)) / (60 * 1000))
+  const newSeconds = Math.floor((totalMs % (60 * 1000)) / 1000)
+  const newMs = totalMs % 1000
+
+  return `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}:${String(newSeconds).padStart(2, '0')},${String(newMs).padStart(3, '0')}`
 }
 
 // Función para agrupar las sílabas para el formato SRT

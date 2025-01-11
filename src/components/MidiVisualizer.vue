@@ -1,5 +1,5 @@
 <template>
-  <ColorPickerModal :isVisible="isColorPickerVisible" @accept="exptSrt" @cancel="hideColorPicker" />
+  <ColorPickerModal :isVisible="isColorPickerVisible" :format="currentFormat" @accept="handleExport" @cancel="hideColorPicker" />
 
   <div tabindex="3" @keydown.ctrl.up="aumenta" @keydown.ctrl.down="disminuye" class="cuerpo"
     @contextmenu.prevent="showContextMenu">
@@ -13,7 +13,7 @@
     </div>
     <div tabindex="2" ref="visualization" id="visualization">
       <div tabindex="1" ref="contCanvas" class="contCanvas">
-        <canvas   ref="rCanvas" id="idCanvas" @wheel="handleWheel"></canvas>
+        <canvas ref="rCanvas" id="idCanvas" @wheel="handleWheel"></canvas>
       </div>
     </div>
     <div style="display: flex; align-items: center; width: 100%">
@@ -114,6 +114,7 @@ const props = defineProps({
 const { sharedData } = toRefs(props)
 const isColorPickerVisible = ref(false);
 const mouseX = ref(0);
+const currentFormat = ref('');
 
 const aumenta = () => {
   let tempscale = scale.value.x
@@ -179,7 +180,7 @@ const showContextMenu = (event) => {
 const handleContextMenuAction = (action) => {
   if (action === 'cut' || action === 'move' || action === 'draw' || action === 'view' || action === 'delete') {
     setMode(action);
-  } 
+  }
 };
 watch(sharedData, (newValue) => {
   oraciones.value = newValue
@@ -198,7 +199,7 @@ const agruparSilabas = (data, grupos) => {
     console.log('startTime', grupo, data[index][1], data[index][2]);
     let endTime = data[index + grupo.length - 1][2];
     let silabas = grupo.map((silaba, i) => {
-      const duracion = (data[index + i][2] - data[index + i][1]) * usporquarter.value / pasoGrilla.value /1000;
+      const duracion = (data[index + i][2] - data[index + i][1]) * usporquarter.value / pasoGrilla.value / 1000;
       console.log('duracion', data[index + i][1]);
       return "{" + `\\k${Math.floor(duracion / 10)}` + "}" + `${silaba}`;
     }).join('');
@@ -215,54 +216,40 @@ const agruparSilabas = (data, grupos) => {
   return agrupado;
 };
 
-const exptAss = () => {
-  let data = exportData()
-  console.log('exportar', data);
-
+const exptAss = ({ color, isColorEnabled, delay }) => {
+  hideColorPicker();
+  let data = exportData();
   if (data.length < oraciones.value.flat().length) {
     alert('There are not enough notes for the syllables')
     return
   }
   data = agruparSilabas(data, oraciones.value)
+  const assContent = formatAss(data, delay);
 
-  console.log('exportar', data);
-  const assContent = formatAss(data);
-  console.log('assContent', assContent);
-
-  // Crear un archivo .ass y descargarlo
+  // Create and download .ass file
   const blob = new Blob([assContent], { type: 'text/plain;charset=utf-8' });
   const link = document.createElement('a');
   link.href = URL.createObjectURL(blob);
   link.download = 'subtitles.ass';
   link.click();
-
 }
-const showColorPicker = () => {
-  isColorPickerVisible.value = true;
-};
-const hideColorPicker = () => {
-  isColorPickerVisible.value = false;
 
-}
-const exptSrt = ({ color, isColorEnabled }) => {
+const exptSrt = ({ color, isColorEnabled, delay }) => {
   let srtContent;
   hideColorPicker();
   let data = exportData();
-  console.log('exportar', data);
+
   if (data.length < oraciones.value.flat().length) {
     alert('No hay suficientes notas para las silabas');
     return;
   }
   data = agruparSilabasSrt(data, oraciones.value, usporquarter.value, pasoGrilla.value);
 
-  console.log('exportar', data);
   if (isColorEnabled) {
-    srtContent = formatSrtcolor(data, color.value);
+    srtContent = formatSrtcolor(data, color.value, delay);
+  } else {
+    srtContent = formatSrt(data, delay);
   }
-  else {
-    srtContent = formatSrt(data);
-  }
-
 
   console.log('srtContent', srtContent);
 
@@ -346,13 +333,13 @@ watch(
       grilla.value = []
       let cont = 0
       for (let x = 0; x <= totalWidth.value; x += pasoGrilla.value) {
-        const text = convertirATiempo(cont,usporquarter.value)
+        const text = convertirATiempo(cont, usporquarter.value)
         grilla.value.push({ x: x, text: `${text}` })
         cont++
       }
       rects.value = value[listChannel.value[0]]
       undoHistory.value = []
-      console.log("total",totalWidth.value)
+      console.log("total", totalWidth.value)
       if (totalWidth.value < 10000) {
         scale.value = { x: 1, y: 1 }
       } else { //sirve para que el zoom sea proporcional al ancho del canvas
@@ -380,8 +367,8 @@ function handleResize() {
   drawRectangles()
 }
 const debouncedHandleMouseMove = debounce((event) => {
-  mouseX.value = event.clientX 
-}, 0.2); 
+  mouseX.value = event.clientX
+}, 0.2);
 onMounted(() => {
   const debouncedHandleResize = debounce(handleResize, 300)
   console.log('anchoTotal', rCanvas.value.width, scale.value.x)
@@ -444,6 +431,23 @@ function exportMidi() {
   link.click()
 }
 
+const showColorPicker = (format) => {
+  currentFormat.value = format;
+  isColorPickerVisible.value = true;
+};
+
+const hideColorPicker = () => {
+  isColorPickerVisible.value = false;
+};
+
+const handleExport = (options) => {
+  if (currentFormat.value === 'ass') {
+    exptAss(options);
+  } else {
+    exptSrt(options);
+  }
+}
+
 /*  onUnmounted(() => {
    rCanvas.value.removeEventListener("mousedown", pickClick);
    rCanvas.value.removeEventListener("mousemove", pickDrag);
@@ -457,7 +461,7 @@ function exportMidi() {
   width: 100%;
   height: 100vh;
   margin: 0px;
-  
+
 }
 
 .cuerpo {
@@ -468,15 +472,19 @@ function exportMidi() {
 .cuerpo {
   cursor: default;
 }
+
 .cuerpo.cut-mode {
   cursor: crosshair;
 }
+
 .cuerpo.move-mode {
   cursor: move;
 }
+
 .cuerpo.draw-mode {
   cursor: cell;
 }
+
 .contCanvas {
   height: 100%;
   width: 100%;
@@ -532,6 +540,4 @@ function exportMidi() {
   padding: 5px;
   z-index: 1000;
 }
-
-
 </style>

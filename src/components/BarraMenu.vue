@@ -111,11 +111,11 @@ function fileSelect(event) {
 }
 
 function exptAss() {
-    emit('exptAss')
+    emit('exptSrt', 'ass')
 }
 
 function exptSrt() {
-    emit('exptSrt')
+    emit('exptSrt', 'srt')
 }
 
 function exportMidi() {

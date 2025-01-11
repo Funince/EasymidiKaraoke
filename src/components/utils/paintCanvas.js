@@ -405,25 +405,25 @@ export function paintCanvas(
     }
   }
 
-function finishDrawing(e) {
-  if (!isDragging.value) return
-  
-  const mousePos = getMousePos(e)
-  const note = rects.value[dragIndex.value]
-  const width = (mousePos.x + offsetX.value) * scale.value.x - note.x
+  function finishDrawing(e) {
+    if (!isDragging.value) return
 
-  if (width > 0) {
-    note.width = width
-    updateRectIndices() // Update indices after drawing
-  } else {
-    rects.value.splice(dragIndex.value, 1)
+    const mousePos = getMousePos(e)
+    const note = rects.value[dragIndex.value]
+    const width = (mousePos.x + offsetX.value) * scale.value.x - note.x
+
+    if (width > 0) {
+      note.width = width
+      updateRectIndices() // Update indices after drawing
+    } else {
+      rects.value.splice(dragIndex.value, 1)
+    }
+
+    isDragging.value = false
+    dragIndex.value = null
+    drawGrid()
+    drawRectangles()
   }
-
-  isDragging.value = false
-  dragIndex.value = null
-  drawGrid()
-  drawRectangles()
-}
   // Update existing event handlers
   const pickClick = (e) => {
     if (!isMoveMode.value) return
@@ -453,14 +453,14 @@ function finishDrawing(e) {
   // Add cleanup on note release
   const pickRelease = () => {
     if (dragIndex.value !== null) {
-    updateRectIndices() // Update indices after moving
-    isDragging.value = false
-    dragIndex.value = null
-    cancelAnimationFrame(scrollAnimationId)
-    scrollAnimationId = null
-    currentScrollDirection = null
-    drawGrid()
-    drawRectangles()
+      updateRectIndices() // Update indices after moving
+      isDragging.value = false
+      dragIndex.value = null
+      cancelAnimationFrame(scrollAnimationId)
+      scrollAnimationId = null
+      currentScrollDirection = null
+      drawGrid()
+      drawRectangles()
     }
   }
 

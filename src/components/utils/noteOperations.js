@@ -16,7 +16,6 @@ export function splitNote(note, splitPoint, scale, offsetX) {
   return [firstNote, secondNote]
 }
 
-
 export function findClickedNote(mouseX, mouseY, notes, height_note, scale, offsetX) {
   return notes.findIndex((note) => {
     const scaledX = note.x / scale.x - offsetX

@@ -33,35 +33,35 @@ export const usePlayerStore = defineStore('player', () => {
     }
   }
 
-async function play() {
-  try {
-    if (!player || !audioLoaded.value) {
-      console.error('Player not ready')
-      return
-    }
+  async function play() {
+    try {
+      if (!player || !audioLoaded.value) {
+        console.warn('No audio loaded')
+        isPlaying.value = true
+        return
+      }
 
-    await Tone.start()
-    await Tone.context.resume()
-    console.log('Starting playback')
-    const seconds = currentTime.value/1000
+      await Tone.start()
+      await Tone.context.resume()
+      console.log('Starting playback')
+      const seconds = currentTime.value / 1000
 
-    if (player.state === 'started') {
-      player.stop()
+      if (player.state === 'started') {
+        player.stop()
+      }
+      console.log('Playing at', seconds)
+      player.start(0, seconds)
+      console.log(player)
+      isPlaying.value = true
+    } catch (error) {
+      console.error('Play error:', error)
+      audioError.value = error.message
     }
-    console.log('Playing at', seconds)
-    player.start(0, seconds)
-    console.log(player)
-    isPlaying.value = true
-  } catch (error) {
-    console.error('Play error:', error)
-    audioError.value = error.message
   }
-}
   function pause() {
     try {
       if (player) {
         player.stop()
-        
       }
       isPlaying.value = false
     } catch (error) {

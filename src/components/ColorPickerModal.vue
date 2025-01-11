@@ -1,15 +1,28 @@
 <template>
     <dialog ref="dialog" class="centered-dialog">
         <form method="dialog" @submit.prevent="accept">
-            <h3>Select a color</h3>
-            <div class="color-input">
-                <input type="color" v-model="color" :disabled="!isColorEnabled" />
-                <input type="text" v-model="hexColor" class="color-hex-input" :disabled="!isColorEnabled" />
+            <h3>Export Options</h3>
+            
+            <div class="form-group">
+                <div class="input-row">
+                    <label class="input-label">Delay (seconds):</label>
+                    <input type="number" v-model="delay" step="0.1" class="delay-input">
+                </div>
             </div>
-            <div class="slider-input">
-                <label>{{ isColorEnabled ? 'Karaoke On' : 'Karaoke Off' }}</label>
-                <input type="checkbox" v-model="isColorEnabled" />
-            </div>
+
+            <template v-if="format === 'srt'">
+                <div class="form-group">
+                    <div class="input-row">
+                        <input type="color" v-model="color" :disabled="!isColorEnabled" class="color-input" />
+                        <input type="text" v-model="hexColor" class="color-hex-input" :disabled="!isColorEnabled" />
+                    </div>
+                </div>
+                <div class="slider-input">
+                    <label>{{ isColorEnabled ? 'Karaoke On' : 'Karaoke Off' }}</label>
+                    <input type="checkbox" v-model="isColorEnabled" />
+                </div>
+            </template>
+
             <div class="modal-actions">
                 <button type="button" @click="cancel">Cancel</button>
                 <button type="submit">Accept</button>
@@ -24,6 +37,10 @@ import { ref, watch } from 'vue'
 const props = defineProps({
     isVisible: {
         type: Boolean,
+        required: true
+    },
+    format: {
+        type: String,
         required: true
     }
 });
@@ -42,6 +59,7 @@ const dialog = ref(null);
 const color = ref('#000000');
 const hexColor = ref('#000000');
 const isColorEnabled = ref(true);
+const delay = ref(0);
 
 watch(color, (newColor) => {
     if (isColorEnabled.value) {
@@ -56,8 +74,12 @@ watch(hexColor, (newHex) => {
 });
 
 function accept() {
-    emit('accept', { color: color.value, isColorEnabled: isColorEnabled.value });
-
+    const options = { delay: parseFloat(delay.value) };
+    if (props.format === 'srt') {
+        options.color = color.value;
+        options.isColorEnabled = isColorEnabled.value;
+    }
+    emit('accept', options);
     dialog.value.close();
 }
 
@@ -90,11 +112,28 @@ h3 {
     color: whitesmoke;
 }
 
-.color-input {
+.form-group {
+    margin: 20px 0;
+    width: 100%;
     display: flex;
     justify-content: center;
+}
+
+.input-row {
+    display: flex;
     align-items: center;
-    margin: 20px 0;
+    justify-content: space-between;
+    width: 80%;
+    gap: 10px;
+    justify-content: center
+}
+
+.input-label {
+    width: 80px; /* Same width as color input */
+}
+
+.color-input {
+    width: 80px;
 }
 
 .color-hex-input {
@@ -113,7 +152,7 @@ h3 {
     margin: 20px 0;
 }
 
-.slider-input label {
+label {
     margin-right: 10px;
     color: whitesmoke;
 }
@@ -140,5 +179,13 @@ button[type="button"] {
 button[type="submit"] {
     background-color: #4CAF50;
     color: white;
+}
+
+.delay-input {
+    width: 80px; /* Same width as color input */
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: white;
 }
 </style>
