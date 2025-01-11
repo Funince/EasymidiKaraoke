@@ -5,14 +5,15 @@
     @contextmenu.prevent="showContextMenu">
     <slot>
       <BarraMenu :listChannel="listChannel" @SelectChannel="seleccion" @aumenta="aumenta" @disminuye="disminuye"
-        @exptAss="exptAss" @exptSrt="showColorPicker" @fileSelect="handleFileUpload" />
+        @exptAss="exptAss" @exptSrt="showColorPicker" @fileSelect="handleFileUpload" @undo="undo"
+        @exportMidi="exportMidi" :isFileLoaded="isFileLoaded" />
     </slot>
     <div style="height: 40px">
       <canvas ref="gridcanvas" id="gridcanvas"></canvas>
     </div>
     <div tabindex="2" ref="visualization" id="visualization">
       <div tabindex="1" ref="contCanvas" class="contCanvas">
-        <canvas ref="rCanvas" id="idCanvas" @wheel="handleWheel"></canvas>
+        <canvas   ref="rCanvas" id="idCanvas" @wheel="handleWheel"></canvas>
       </div>
     </div>
     <div style="display: flex; align-items: center; width: 100%">
@@ -51,12 +52,18 @@ import { toRefs, ref, onMounted, onBeforeMount, onUnmounted, watch, onUpdated, c
 import { paintCanvas } from '@/components/utils/paintCanvas.js'
 import ContextMenu from '@/components/ContextMenu.vue';
 import { processMidi } from '@/components/utils/midiProcessor.js';
+import { exportRectsToMidi } from '@/components/utils/formatMidi.js'
+import { usePlayerStore } from '@/stores/playerStore'
+
+const store = usePlayerStore()
 
 const totalWidth = ref(0) // Define totalWidth
 let height_note = ref(16)
 let NOTAS_TOTAL = ref(128)
 const usporquarter = ref(0)
+const isFileLoaded = ref(false) // Track if a file is loaded
 const {
+  undoHistory,
   gridcanvas,
   stripeCanvas,
   offsetX,
@@ -73,10 +80,8 @@ const {
   pickRelease,
   exportData,
   setMode,
+  undo, // Add undo function
 } = paintCanvas(height_note.value, NOTAS_TOTAL.value, '#f0f0f0', '#e0e0e0', totalWidth, usporquarter)
-
-
-
 
 const listChannel = ref([])
 let visualization = ref(null)
@@ -109,9 +114,6 @@ const props = defineProps({
 const { sharedData } = toRefs(props)
 const isColorPickerVisible = ref(false);
 const mouseX = ref(0);
-
-
-
 
 const aumenta = () => {
   let tempscale = scale.value.x
@@ -172,10 +174,12 @@ const showContextMenu = (event) => {
   contextMenu.value.showMenu(event);
 };
 
+
+
 const handleContextMenuAction = (action) => {
-  if (action === 'cut' || action === 'move' || action === 'draw' || action === 'view') {
+  if (action === 'cut' || action === 'move' || action === 'draw' || action === 'view' || action === 'delete') {
     setMode(action);
-  }
+  } 
 };
 watch(sharedData, (newValue) => {
   oraciones.value = newValue
@@ -286,6 +290,7 @@ function handleFileUpload(file) {
       arrayBuffer.value = e.target.result
     };
     reader.readAsArrayBuffer(file);
+    isFileLoaded.value = true // Set file loaded flag
   }
 }
 async function processFile() {
@@ -346,6 +351,7 @@ watch(
         cont++
       }
       rects.value = value[listChannel.value[0]]
+      undoHistory.value = []
       console.log("total",totalWidth.value)
       if (totalWidth.value < 10000) {
         scale.value = { x: 1, y: 1 }
@@ -410,12 +416,33 @@ onMounted(() => {
       drawRectangles()
     }
   )
+  // Warn before closing or refreshing the page
+  window.addEventListener('beforeunload', handleBeforeUnload)
 })
+
 onUnmounted(() => {
   rCanvas.value.removeEventListener('mousemove', debouncedHandleMouseMove);
   debouncedHandleMouseMove.cancel(); // Clean up debounce
+  window.removeEventListener('beforeunload', handleBeforeUnload)
 });
+
+function handleBeforeUnload(event) {
+  if (isFileLoaded.value) {
+    event.preventDefault()
+    event.returnValue = ''
+  }
+}
+
 onUpdated(() => { })
+
+function exportMidi() {
+  const midiData = exportRectsToMidi(rects.value, store.tempo, usporquarter.value, pasoGrilla.value)
+  const blob = new Blob([midiData], { type: 'audio/midi' })
+  const link = document.createElement('a')
+  link.href = URL.createObjectURL(blob)
+  link.download = 'exported.mid'
+  link.click()
+}
 
 /*  onUnmounted(() => {
    rCanvas.value.removeEventListener("mousedown", pickClick);
@@ -496,6 +523,7 @@ onUpdated(() => { })
   }
 }
 
+
 .current-time {
   position: absolute;
   color: black;
@@ -504,4 +532,6 @@ onUpdated(() => { })
   padding: 5px;
   z-index: 1000;
 }
+
+
 </style>

@@ -15,7 +15,7 @@
                         </a>
                         <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                             <li>
-                                <a class="dropdown-item" href="#" @click.prevent="triggerFileInput">New file</a>
+                                <a class="dropdown-item" href="#" @click.prevent="confirmFileLoad">New file</a>
                                 <input type="file" ref="fileInput" accept=".mid,.midi" @change="fileSelect"
                                     style="display: none;">
                             </li>
@@ -24,11 +24,20 @@
                             </li>
                             <li><a class="dropdown-item" href="#" @click.prevent="exptAss">Export format (.ass)</a></li>
                             <li><a class="dropdown-item" href="#" @click.prevent="exptSrt">Export format (.srt)</a></li>
+                            <li><a class="dropdown-item" href="#" @click.prevent="exportMidi">Export MIDI</a></li>
+                            <li>
+                                <hr class="dropdown-divider">
+                            </li>
                         </ul>
                     </li>
                 </ul>
 
                 <ul class="navbar-nav ms-auto">
+                    <li>
+                        <button class="btn btn-secondary" @click.prevent="undo">
+                            <svg-icon type="mdi" :path="arrowleft"></svg-icon>
+                        </button>
+                    </li>
                     <li v-if="!menuVisible">
                         <button class="nav-link" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
                             aria-expanded="false">
@@ -55,12 +64,16 @@
 
 <script setup>
 import { computed, ref, watch } from 'vue';
-  
+import SvgIcon from '@jamescoyle/vue-icon'
+import { mdiArrowULeftTop } from '@mdi/js';
+
+const arrowleft = ref(mdiArrowULeftTop);
 const fileInput = ref(null);
-const emit = defineEmits(['SelectChannel', 'exptAss', 'exptSrt', 'fileSelect']);
+const emit = defineEmits(['SelectChannel', 'exptAss', 'exptSrt', 'fileSelect', 'undo', 'exportMidi']);
 
 const props = defineProps({
     listChannel: { Array, default: ["0"] },
+    isFileLoaded: Boolean
 });
 const channel = ref("0");
 const menuVisible = computed(() => props.listChannel.length > 1 ? true : false)
@@ -79,6 +92,17 @@ const triggerFileInput = () => {
     fileInput.value.click();
 }
 
+function confirmFileLoad() {
+    if (props.isFileLoaded) {
+        console.log(props.isFileLoaded)
+        if (confirm("A file is already loaded. Do you want to load a new file? This will discard the current file.")) {
+            triggerFileInput();
+        }
+    } else {
+        triggerFileInput();
+    }
+}
+
 function fileSelect(event) {
     const file = event.target.files[0];
     if (file) {
@@ -94,9 +118,17 @@ function exptSrt() {
     emit('exptSrt')
 }
 
+function exportMidi() {
+    emit('exportMidi')
+}
+
 function selectItem(item) {
     channel.value = item;
     emit('SelectChannel', item)
+}
+
+function undo() {
+    emit('undo')
 }
 </script>
 

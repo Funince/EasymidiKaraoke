@@ -5,6 +5,7 @@
             <li @click="handleAction('move')">Move Note</li>
             <li @click="handleAction('draw')">Draw Mode</li>
             <li @click="handleAction('view')">View Mode</li>
+            <li @click="handleAction('delete')">Delete Note</li>
         </ul>
     </div>
 </template>

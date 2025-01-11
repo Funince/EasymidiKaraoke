@@ -6,7 +6,7 @@ function textToMidi(text) {
     let words = part.split('-')
     return words
   })
-  console.log(arr)
+  //console.log(arr)
   const result = arr.map((subArr) =>
     subArr.flatMap((item) => {
       // Separar el elemento en partes y agregar un espacio a la primera sílaba
