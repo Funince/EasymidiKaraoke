@@ -1,14 +1,13 @@
 <template>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark ">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
             <a class="navbar-brand" href="#">EasyKaraoke</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <div class="collapse navbar-collapse " id="navbarNav">
+            <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button"
                             data-bs-toggle="dropdown" aria-expanded="false">
@@ -19,7 +18,6 @@
                                 <a class="dropdown-item" href="#" @click.prevent="triggerFileInput">New file</a>
                                 <input type="file" ref="fileInput" accept=".mid,.midi" @change="fileSelect"
                                     style="display: none;">
-
                             </li>
                             <li>
                                 <hr class="dropdown-divider">
@@ -29,8 +27,8 @@
                         </ul>
                     </li>
                 </ul>
-                <ul class="navbar-nav ms-auto">
 
+                <ul class="navbar-nav ms-auto">
                     <li v-if="!menuVisible">
                         <button class="nav-link" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown"
                             aria-expanded="false">
@@ -42,25 +40,22 @@
                             data-bs-toggle="dropdown" aria-expanded="false">
                             Channel {{ channel }}
                         </button>
-                        <ul class="dropdown-menu " aria-labelledby="navbarDropdown">
+                        <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                             <a class="dropdown-item" href="#" v-for="(item, index) in menuItems" :key="index"
                                 @click="selectItem(item)">
                                 {{ item }}
                             </a>
                         </ul>
                     </li>
-
                 </ul>
-
             </div>
         </div>
     </nav>
 </template>
 
-
 <script setup>
-
 import { computed, ref, watch } from 'vue';
+  
 const fileInput = ref(null);
 const emit = defineEmits(['SelectChannel', 'exptAss', 'exptSrt', 'fileSelect']);
 
@@ -81,32 +76,28 @@ watch(() => props.listChannel, (newList) => {
 }, { immediate: true });
 
 const triggerFileInput = () => {
-    // Maneja la apertura del diálogo de selección de archivo
     fileInput.value.click();
 }
 
 function fileSelect(event) {
     const file = event.target.files[0];
     if (file) {
-        // Emitir el archivo seleccionado al componente padre
         emit('fileSelect', file);
     }
 }
 
 function exptAss() {
-    emit('exptAss')// Maneja la exportación del formato
+    emit('exptAss')
 }
 
 function exptSrt() {
-    emit('exptSrt')// Maneja la exportación del formato
+    emit('exptSrt')
 }
 
 function selectItem(item) {
-    // Maneja la selección del ítem del menú
     channel.value = item;
     emit('SelectChannel', item)
 }
-
 </script>
 
 <style scoped></style>

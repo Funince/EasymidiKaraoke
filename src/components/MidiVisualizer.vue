@@ -1,7 +1,8 @@
 <template>
   <ColorPickerModal :isVisible="isColorPickerVisible" @accept="exptSrt" @cancel="hideColorPicker" />
 
-  <div tabindex="3" @keydown.ctrl.up="aumenta" @keydown.ctrl.down="disminuye" class="cuerpo">
+  <div tabindex="3" @keydown.ctrl.up="aumenta" @keydown.ctrl.down="disminuye" class="cuerpo"
+    @contextmenu.prevent="showContextMenu">
     <slot>
       <BarraMenu :listChannel="listChannel" @SelectChannel="seleccion" @aumenta="aumenta" @disminuye="disminuye"
         @exptAss="exptAss" @exptSrt="showColorPicker" @fileSelect="handleFileUpload" />
@@ -30,9 +31,13 @@
       </div>
     </div>
   </div>
+  <ContextMenu ref="contextMenu" @action="handleContextMenuAction" />
+
 </template>
 
 <script setup>
+import { convertirTicksATiempo, convertirATiempo } from '@/components/utils/timeUtils';
+
 import { formatSrt, agruparSilabasSrt, formatSrtcolor } from '@/components/utils/formatSrt';
 import formatAss from '@/components/utils/formatAss.js';
 import SvgIcon from '@jamescoyle/vue-icon'
@@ -44,8 +49,17 @@ import { debounce, clamp } from 'lodash'
 import { parseArrayBuffer } from 'midi-json-parser'
 import { toRefs, ref, onMounted, onBeforeMount, onUnmounted, watch, onUpdated, computed } from 'vue'
 import { paintCanvas } from '@/components/utils/paintCanvas.js'
+import ContextMenu from '@/components/ContextMenu.vue';
+import { processMidi } from '@/components/utils/midiProcessor.js';
+
+
+const totalWidth = ref(0) // Define totalWidth
+let height_note = ref(16)
+let NOTAS_TOTAL = ref(128)
+const usporquarter = ref(0)
 const {
   gridcanvas,
+  stripeCanvas,
   offsetX,
   pasoGrilla,
   list_text,
@@ -58,17 +72,18 @@ const {
   pickClick,
   pickDrag,
   pickRelease,
-  exportData
-} = paintCanvas()
+  exportData,
+  setMode,
+} = paintCanvas(height_note.value, NOTAS_TOTAL.value, '#f0f0f0', '#e0e0e0', totalWidth, usporquarter)
+
 
 const listChannel = ref([])
 let visualization = ref(null)
-let svg = ref(null)
 let arrayBuffer = ref(null)
 const contentLength = ref(0)
 const scrollbar = ref(null)
 const contCanvas = ref(null)
-let usporquarter = 0
+
 let scale_temp = { x: 1, y: 1 }
 const selectedColor = ref('#ff5500');
 const color1 = '#8dbf8b'
@@ -79,13 +94,11 @@ const color5 = '#9EA492'
 let width = 0
 let height = 0
 let totalHeight = ref(0)
-let totalWidth = ref(0)
 let midi = ref(null)
-let NOTAS_TOTAL = ref(128)
 let firstposiciony = ref(null)
 let firstposicionx = ref(null)
 let body = ref(null)
-let height_note = ref(16)
+
 let tempTracks = {}
 let oraciones = ref([])
 const Alltracks = ref({})
@@ -94,6 +107,10 @@ const props = defineProps({
 })
 const { sharedData } = toRefs(props)
 const isColorPickerVisible = ref(false);
+const mouseX = ref(0);
+
+
+
 
 const aumenta = () => {
   let tempscale = scale.value.x
@@ -148,7 +165,17 @@ const seleccion = (value) => {
     iniciarScroll(value)
   }
 }
+const contextMenu = ref(null);
 
+const showContextMenu = (event) => {
+  contextMenu.value.showMenu(event);
+};
+
+const handleContextMenuAction = (action) => {
+  if (action === 'cut' || action === 'move' || action === 'draw' || action === 'view') {
+    setMode(action);
+  }
+};
 watch(sharedData, (newValue) => {
   oraciones.value = newValue
   list_text.value = newValue.flat()
@@ -156,20 +183,6 @@ watch(sharedData, (newValue) => {
   drawGrid()
   drawRectangles()
 })
-const convertirTicksATiempo = (ticks, usporquarter, ticksPorNegra) => {
-  const tiempoMs = (ticks * usporquarter) / ticksPorNegra / 1000;
-  const totalSeconds = Math.floor(tiempoMs / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  const milliseconds = Math.floor(tiempoMs % 1000);
-
-  // Asegúrate de que los valores estén formateados correctamente
-  const formattedMinutes = String(minutes).padStart(2, '0');
-  const formattedSeconds = String(seconds).padStart(2, '0');
-  const formattedMilliseconds = String(milliseconds).padStart(3, '0');
-
-  return `${formattedMinutes}:${formattedSeconds}.${formattedMilliseconds}`;
-};
 
 const agruparSilabas = (data, grupos) => {
   let agrupado = [];
@@ -180,14 +193,15 @@ const agruparSilabas = (data, grupos) => {
     console.log('startTime', grupo, data[index][1], data[index][2]);
     let endTime = data[index + grupo.length - 1][2];
     let silabas = grupo.map((silaba, i) => {
-      const duracion = data[index + i][2] - data[index + i][1];
+      const duracion = (data[index + i][2] - data[index + i][1]) * usporquarter.value / pasoGrilla.value /1000;
+      console.log('duracion', data[index + i][1]);
       return "{" + `\\k${Math.floor(duracion / 10)}` + "}" + `${silaba}`;
     }).join('');
 
     agrupado.push({
       silaba: silabas,
-      startTime: convertirTicksATiempo(startTime, usporquarter, pasoGrilla.value),
-      endTime: convertirTicksATiempo(endTime, usporquarter, pasoGrilla.value)
+      startTime: convertirTicksATiempo(startTime, usporquarter.value, pasoGrilla.value),
+      endTime: convertirTicksATiempo(endTime, usporquarter.value, pasoGrilla.value)
     });
 
     index += grupo.length;
@@ -205,7 +219,6 @@ const exptAss = () => {
     return
   }
   data = agruparSilabas(data, oraciones.value)
-
 
   console.log('exportar', data);
   const assContent = formatAss(data);
@@ -235,7 +248,7 @@ const exptSrt = ({ color, isColorEnabled }) => {
     alert('No hay suficientes notas para las silabas');
     return;
   }
-  data = agruparSilabasSrt(data, oraciones.value, usporquarter, pasoGrilla.value);
+  data = agruparSilabasSrt(data, oraciones.value, usporquarter.value, pasoGrilla.value);
 
   console.log('exportar', data);
   if (isColorEnabled) {
@@ -282,7 +295,12 @@ async function processFile() {
       midi.value = await parseArrayBuffer(clonedArrayBuffer)
       initializeSVG()
       console.log('procesando archivo')
-      procesarMIDI()
+      const result = processMidi(midi.value, height_note, tempTracks);
+      pasoGrilla.value = result.pasoGrilla;
+      totalHeight.value = result.totalHeight;
+      totalWidth.value = result.maxTime;
+      usporquarter.value = result.usporquarter;
+      console.log('usporquarteaaar', usporquarter.value)
       Alltracks.value = tempTracks
       listChannel.value = Object.keys(tempTracks)
     } catch (error) {
@@ -294,76 +312,7 @@ function initializeSVG() {
   width = visualization.value.clientWidth
   height = visualization.value.clientHeight
 }
-function updateSVG() {
-  if (!svg.value || !visualization.value) return
-  height = visualization.value.clientHeight
-  width = visualization.value.clientWidth
-  body.value.style('height', height + 'px')
-}
-function procesarMIDI() {
-  pasoGrilla.value = midi.value.division
-  console.log('midi', midi.value)
-  // Altura total basada en el rango de notas MIDI
-  totalHeight.value = 128 * height_note.value
-  // Escala para las notas MIDI
-  let maxTime = 0
 
-  midi.value.tracks.forEach((track, trackIndex) => {
-    let currentTime = 0
-    const noteEvents = []
-
-    // Construir una lista de eventos de notas con duraciones calculadas
-    track.forEach((event, index) => {
-      currentTime += event.delta
-      if (event.timeSignature) {
-        console.log('timeSignature', event.timeSignature)
-      } else if (event.setTempo) {
-        usporquarter = event.setTempo.microsecondsPerQuarter
-      } else if (event.noteOn) {
-        if (!tempTracks[event.channel]) {
-          tempTracks[event.channel] = []
-        }
-        noteEvents.push({
-          noteNumber: event.noteOn.noteNumber,
-          startTime: currentTime,
-          channel: event.channel,
-          velocity: event.noteOn.velocity
-        })
-      }
-      if (event.noteOff) {
-        const noteOnEvent = noteEvents.find(
-          (e) =>
-            e.noteNumber === event.noteOff.noteNumber && e.channel === event.channel && !e.endTime
-        )
-        if (noteOnEvent) {
-          noteOnEvent.endTime = currentTime
-          noteOnEvent.duration = currentTime - noteOnEvent.startTime
-        }
-        if (currentTime > maxTime) {
-          maxTime = currentTime
-        }
-      }
-    })
-    totalWidth.value = maxTime
-    // Dibujar las notas MIDI
-
-    noteEvents.filter((note) => note.endTime).forEach(addItem)
-  })
-
-  /* paintNotes() */
-}
-function addItem(note) {
-  const index = tempTracks[note.channel].length > 0 ? tempTracks[note.channel].length : 0
-
-  tempTracks[note.channel].push({
-    id: `${index}`,
-    x: note.startTime,
-    nota: note.noteNumber,
-    width: note.duration,
-    channel: note.channel,
-    velocity: note.velocity
-  })
-}
 
 function iniciarScroll(channel = 0) {
   const yPos = totalHeight.value - tempTracks[channel][0].nota * height_note.value
@@ -383,15 +332,7 @@ watch(arrayBuffer, (value) => {
     processFile();
   }
 });
-function convertirATiempo(cont) {
-  const t = (cont * usporquarter) / 1000000
-  const totalSeconds = Math.floor(t)
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-  const milliseconds = Math.floor((t - totalSeconds) * 1000)
 
-  return `${minutes}:${seconds}.${milliseconds}`
-}
 watch(
   () => Alltracks.value,
   (value) => {
@@ -399,7 +340,7 @@ watch(
       grilla.value = []
       let cont = 0
       for (let x = 0; x <= totalWidth.value; x += pasoGrilla.value) {
-        const text = convertirATiempo(cont)
+        const text = convertirATiempo(cont,usporquarter.value)
         grilla.value.push({ x: x, text: `${text}` })
         cont++
       }
@@ -426,23 +367,40 @@ let resizeObserver
 function handleResize() {
   rCanvas.value.width = contCanvas.value.clientWidth
   gridcanvas.value.style.width = `${contCanvas.value.clientWidth}px`
+  stripeCanvas.value.width = contCanvas.value.clientWidth
+  stripeCanvas.value.height = contCanvas.value.clientHeight
   drawGrid()
   drawRectangles()
 }
-
+const debouncedHandleMouseMove = debounce((event) => {
+  mouseX.value = event.clientX 
+}, 0.2); 
 onMounted(() => {
   const debouncedHandleResize = debounce(handleResize, 300)
   console.log('anchoTotal', rCanvas.value.width, scale.value.x)
   rCanvas.value.width = contCanvas.value.clientWidth
   gridcanvas.value.style.width = `${contCanvas.value.clientWidth}px`
+  stripeCanvas.value.width = contCanvas.value.clientWidth
+  stripeCanvas.value.height = contCanvas.value.clientHeight
   console.log('anchoTotal', rCanvas.value.width, scale.value.x)
   rCanvas.value.addEventListener('mousedown', pickClick)
   rCanvas.value.addEventListener('mousemove', pickDrag)
   rCanvas.value.addEventListener('mouseup', pickRelease)
+  rCanvas.value.addEventListener('mousemove', debouncedHandleMouseMove);
+
   if (visualization.value) {
     resizeObserver = new ResizeObserver(debouncedHandleResize)
     resizeObserver.observe(visualization.value)
   }
+  // Sync the scrollbar with the canvas scroll offset
+  watch(
+    () => offsetX.value,
+    (value) => {
+      if (scrollbar.value) {
+        scrollbar.value.scrollOffset = value;
+      }
+    }
+  );
   watch(
     () => scrollbar.value.scrollOffset,
     (value) => {
@@ -452,6 +410,10 @@ onMounted(() => {
     }
   )
 })
+onUnmounted(() => {
+  rCanvas.value.removeEventListener('mousemove', debouncedHandleMouseMove);
+  debouncedHandleMouseMove.cancel(); // Clean up debounce
+});
 onUpdated(() => { })
 
 /*  onUnmounted(() => {
@@ -467,6 +429,7 @@ onUpdated(() => { })
   width: 100%;
   height: 100vh;
   margin: 0px;
+  
 }
 
 .cuerpo {
@@ -474,6 +437,18 @@ onUpdated(() => { })
   padding-right: 0.5rem;
 }
 
+.cuerpo {
+  cursor: default;
+}
+.cuerpo.cut-mode {
+  cursor: crosshair;
+}
+.cuerpo.move-mode {
+  cursor: move;
+}
+.cuerpo.draw-mode {
+  cursor: cell;
+}
 .contCanvas {
   height: 100%;
   width: 100%;
@@ -505,6 +480,7 @@ onUpdated(() => { })
   display: block;
 }
 
+
 @media (max-width: 1024px) {
   #visualization {
     width: 100%;
@@ -517,5 +493,14 @@ onUpdated(() => { })
   .cuerpo {
     height: 100%;
   }
+}
+
+.current-time {
+  position: absolute;
+  color: black;
+  top: 90px;
+  left: -10px;
+  padding: 5px;
+  z-index: 1000;
 }
 </style>

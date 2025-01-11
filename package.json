@@ -20,6 +20,7 @@
     "bootstrap": "^5.3.3",
     "lodash": "^4.17.21",
     "midi-json-parser": "^8.1.48",
+    "pinia": "^2.3.0",
     "vue": "^3.4.29",
     "vue-router": "^4.3.3"
   },

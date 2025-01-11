@@ -13,6 +13,7 @@ Style: Default,Arial,20,&H00FFFFFF,&H000000FF,&H00000000,&H64000000,-1,0,0,0,100
 [Events]
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text`
 
+  
   const events = data
     .map(({ silaba, startTime, endTime }) => {
       const texto = silaba.replace(/\$/g, ' ' + '{\\k0}')
