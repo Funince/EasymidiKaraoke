@@ -1,5 +1,8 @@
+import { usePlayerStore } from '@/stores/playerStore'
+
 export function processMidi(midi, height_note, tempTracks) {
   const pasoGrilla = midi.division
+  const store = usePlayerStore()
   console.log('midi', midi)
   // Altura total basada en el rango de notas MIDI
   const totalHeight = 128 * height_note.value
@@ -9,7 +12,7 @@ export function processMidi(midi, height_note, tempTracks) {
   midi.tracks.forEach((track, trackIndex) => {
     let currentTime = 0
     const noteEvents = []
-    
+
     // Construir una lista de eventos de notas con duraciones calculadas
     track.forEach((event, index) => {
       currentTime += event.delta
@@ -17,7 +20,6 @@ export function processMidi(midi, height_note, tempTracks) {
         console.log('timeSignature', event.timeSignature)
       } else if (event.setTempo) {
         usporquarter = event.setTempo.microsecondsPerQuarter
-        
       } else if (event.noteOn) {
         if (!tempTracks[event.channel]) {
           tempTracks[event.channel] = []
@@ -47,7 +49,8 @@ export function processMidi(midi, height_note, tempTracks) {
     // Dibujar las notas MIDI
     noteEvents.filter((note) => note.endTime).forEach((note) => addItem(note, tempTracks))
   })
-
+  let tempo = 60000000 / usporquarter
+  store.setTempo(tempo) // Update tempo in player store
   return { pasoGrilla, totalHeight, maxTime, usporquarter }
 }
 

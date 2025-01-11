@@ -1,5 +1,6 @@
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { convertirTicksATiempo } from './timeUtils'
+import { usePlayerStore } from '@/stores/playerStore'
 import { splitNote, findClickedNote } from './noteOperations'
 import { xorBy } from 'lodash'
 export function paintCanvas(
@@ -10,6 +11,7 @@ export function paintCanvas(
   totalWidth,
   usporquarter
 ) {
+  const store = usePlayerStore()
   const rCanvas = ref(null)
   const gridcanvas = ref(null)
   const stripeCanvas = ref(null) // New canvas for red stripe
@@ -38,6 +40,68 @@ export function paintCanvas(
   height_note = height_note * scale.value.y
   height_note = height_note * scale.value.y
 
+  // Initialize Web Audio API
+  let audioContext = null
+  let masterGain = null
+  function initAudio() {
+    if (!audioContext) {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)()
+    }
+
+    if (!masterGain) {
+      masterGain = audioContext.createGain()
+      masterGain.gain.value = 0.6
+      masterGain.connect(audioContext.destination)
+    }
+  }
+
+  // Create oscillator for playing notes
+  function createOscillator(frequency, startTime, duration, velocity) {
+    const oscillator = audioContext.createOscillator()
+    const gainNode = audioContext.createGain()
+
+    // Set oscillator type and frequency
+    oscillator.type = 'sine'
+    oscillator.frequency.value = frequency
+
+    // Set gain based on velocity
+    const volume = (velocity / 127) * masterGain.gain.value // Adjust by master volume
+    gainNode.gain.value = volume
+    gainNode.gain.setValueAtTime(volume, startTime)
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, startTime + duration)
+
+    // Connect nodes
+    oscillator.connect(gainNode)
+    gainNode.connect(masterGain)
+
+    // Start and stop oscillator
+    oscillator.start(startTime)
+    oscillator.stop(startTime + duration)
+  }
+
+  // Convert MIDI note to frequency
+  function midiToFrequency(note) {
+    return 440 * Math.pow(2, (note - 69) / 12)
+  }
+
+  // Function to play notes from rectangles
+  function playNotesFromRectangles() {
+    initAudio()
+
+    // Start time is the current time in the audio context
+    let currentTime = audioContext.currentTime
+
+    rects.value.forEach((rect,index) => {
+      const frequency = midiToFrequency(rect.nota) // Use note from rect or default to C4 (261.63 Hz)
+      const duration = (rect.width * usporquarter.value)/pasoGrilla.value / 1000000
+      console.log('duration', duration,usporquarter.value)
+      const velocity = 60
+
+      const startTime = (rect.x * usporquarter.value) / pasoGrilla.value / 1000000
+
+      createOscillator(frequency, startTime, duration, velocity)
+    })
+  }
   // Dibujar la cuadrícula
   function getNoteName(noteNumber) {
     const noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
@@ -65,24 +129,27 @@ export function paintCanvas(
 
   // Draw the red stripe on the separate canvas
   function drawRedStripe() {
-      stripeCtx.value.clearRect(0, 0, stripeCanvas.value.width, stripeCanvas.value.height)
-      const x = currentTimePosition.value / scale.value.x - offsetX.value
-      stripeCtx.value.strokeStyle = 'red'
-      stripeCtx.value.lineWidth = 2
-      stripeCtx.value.beginPath()
-      stripeCtx.value.moveTo(x - stripeCtx.value.lineWidth, 0)
-      stripeCtx.value.lineTo(x - stripeCtx.value.lineWidth, stripeCanvas.value.height)
-      stripeCtx.value.stroke()
+    stripeCtx.value.clearRect(0, 0, stripeCanvas.value.width, stripeCanvas.value.height)
+    const x = currentTimePosition.value / scale.value.x - offsetX.value
+    stripeCtx.value.strokeStyle = 'red'
+    stripeCtx.value.lineWidth = 2
+    stripeCtx.value.beginPath()
+    stripeCtx.value.moveTo(x - stripeCtx.value.lineWidth, 0)
+    stripeCtx.value.lineTo(x - stripeCtx.value.lineWidth, stripeCanvas.value.height)
+    stripeCtx.value.stroke()
 
-      const tiempo = convertirTicksATiempo(
-        currentTimePosition.value,
-        usporquarter.value,
-        pasoGrilla.value
-      )
-      stripeCtx.value.fillStyle = 'black'
-      stripeCtx.value.font = '20px Arial'
-      stripeCtx.value.fillText(tiempo, stripeCanvas.value.width - 100, stripeCanvas.value.height-height_note) // Draw time at mouse position
-    
+    const tiempo = convertirTicksATiempo(
+      currentTimePosition.value,
+      usporquarter.value,
+      pasoGrilla.value
+    )
+    stripeCtx.value.fillStyle = 'black'
+    stripeCtx.value.font = '20px Arial'
+    stripeCtx.value.fillText(
+      tiempo,
+      stripeCanvas.value.width - 100,
+      stripeCanvas.value.height - height_note
+    ) // Draw time at mouse position
   }
   function drawGrid() {
     const blackKeys = new Set([1, 3, 6, 8, 10])
@@ -205,9 +272,8 @@ export function paintCanvas(
   }
 
   function handleMouseMove(e) {
-  
     const mousePos = getMousePos(e, true)
-     
+
     mouseX.value = mousePos.x
     mouseY.value = mousePos.y
     currentTimePosition.value = (mousePos.x + offsetX.value) * scale.value.x
@@ -395,20 +461,20 @@ export function paintCanvas(
   }
 
   // Obtener la posición del mouse
-function getMousePos(evt, absolute = false) {
-  if (absolute) {
-    return {
-      x: evt.clientX,
-      y: evt.clientY
-    }
-  } else {
-    const rect = rCanvas.value.getBoundingClientRect()
-    return {
-      x: evt.clientX - rect.left,
-      y: evt.clientY - rect.top
+  function getMousePos(evt, absolute = false) {
+    if (absolute) {
+      return {
+        x: evt.clientX,
+        y: evt.clientY
+      }
+    } else {
+      const rect = rCanvas.value.getBoundingClientRect()
+      return {
+        x: evt.clientX - rect.left,
+        y: evt.clientY - rect.top
+      }
     }
   }
-}
   function findClickedNote(mouseX, mouseY) {
     return rects.value.findIndex((rect) => {
       const scaledX = rect.x / scale.value.x - offsetX.value
@@ -463,8 +529,6 @@ function getMousePos(evt, absolute = false) {
     }
   }
 
-  
-
   onMounted(() => {
     rCanvas.value.width = 100
     gridcanvas.value.width = 100
@@ -500,6 +564,106 @@ function getMousePos(evt, absolute = false) {
     }
   })
 
+  let animationId = null
+  let startTime = null
+  let elapsedTime = 0
+  let isPaused = false
+let isAnimating = false
+let pausedAt = 0
+  function formatTime(ms) {
+    const minutes = Math.floor(ms / 60000)
+    const seconds = Math.floor((ms % 60000) / 1000)
+    const milliseconds = Math.floor(ms % 1000)
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`
+  }
+  watch(
+    () => store.isPlaying,
+    (isPlaying) => {
+      if (isPlaying) {
+        startAnimation()
+      } else {
+        pauseAnimation()
+      }
+    }
+  )
+ function startAnimation() {
+   initAudio()
+   let lastFrameTime = null
+   if (isAnimating) return // Prevent multiple animations
+
+   if (isPaused) {
+     isPaused = false
+   } else {
+     elapsedTime = 0
+   }
+
+   let playingNotes = new Map() // Track currently playing notes
+
+   function animate(currentTime) {
+     if (!isPaused) {
+       if (lastFrameTime === null) {
+         lastFrameTime = currentTime
+       }
+
+       // Calculate delta time between frames
+       const deltaTime = currentTime - lastFrameTime
+       elapsedTime += deltaTime
+       lastFrameTime = currentTime
+
+       store.updateTime(elapsedTime)
+       // Update red stripe position
+       const currentPosition = ((elapsedTime / 1000) * (store.tempo * pasoGrilla.value)) / 60
+       currentTimePosition.value = currentPosition
+
+       // Check for notes to play
+       rects.value.forEach((rect) => {
+         const rectX = rect.x 
+         const rectEnd = (rect.x + rect.width) 
+         // Note starts playing
+         if (currentPosition>= rectX && currentPosition<= rectEnd && !playingNotes.has(rect.id)) {
+           const frequency = midiToFrequency(rect.nota)
+           const duration = (rect.width * usporquarter.value) / pasoGrilla.value / 1000000
+           createOscillator(frequency, audioContext.currentTime, duration, rect.velocity || 64)
+           playingNotes.set(rect.id, rectEnd)
+         }
+
+         // Remove finished notes
+         if (currentPosition > rectEnd) {
+           playingNotes.delete(rect.id)
+         }
+       })
+
+       drawRedStripe()
+     }
+
+     animationId = requestAnimationFrame(animate)
+   }
+
+   animationId = requestAnimationFrame(animate)
+ }
+
+ function pauseAnimation() {
+   isPaused = true
+   isAnimating = false
+   pausedAt = elapsedTime
+   if (animationId) {
+     cancelAnimationFrame(animationId)
+     animationId = null
+   }
+ }
+
+ function stopAnimation() {
+   if (animationId) {
+     cancelAnimationFrame(animationId)
+     animationId = null
+     startTime = null
+     elapsedTime = 0
+     isPaused = false
+     isAnimating = false
+     currentTimePosition.value = 0
+     drawRedStripe()
+   }
+ }
   return {
     gridcanvas,
     stripeCanvas,
@@ -526,5 +690,6 @@ function getMousePos(evt, absolute = false) {
     pickRelease,
     enableCutMode,
     disableCutMode,
+    playNotesFromRectangles
   }
 }

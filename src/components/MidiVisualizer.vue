@@ -52,7 +52,6 @@ import { paintCanvas } from '@/components/utils/paintCanvas.js'
 import ContextMenu from '@/components/ContextMenu.vue';
 import { processMidi } from '@/components/utils/midiProcessor.js';
 
-
 const totalWidth = ref(0) // Define totalWidth
 let height_note = ref(16)
 let NOTAS_TOTAL = ref(128)
@@ -75,6 +74,8 @@ const {
   exportData,
   setMode,
 } = paintCanvas(height_note.value, NOTAS_TOTAL.value, '#f0f0f0', '#e0e0e0', totalWidth, usporquarter)
+
+
 
 
 const listChannel = ref([])

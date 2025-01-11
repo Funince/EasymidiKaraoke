@@ -1,16 +1,11 @@
 <template>
   <div id="conteiner">
     <h2 class="no-select">Lyrics</h2>
-    <textarea
-      ref="input_letra"
-      id="input_letra"
-      placeholder="Enter the lyrics of the song separated by syllable with - and join note $"
-      autofocus="true"
-      spellcheck="false"
-      dir="ltr"
-      rows="1"
-    ></textarea>
-    <button class="btn btn-secondary w-100 m-1" @click="lyricsProcess">Process lyrics</button>
+    <textarea ref="input_letra" id="input_letra"
+      placeholder="Enter the lyrics of the song separated by syllable with - and join note $" autofocus="true"
+      spellcheck="false" dir="ltr" rows="1"></textarea>
+    <button class="btn btn-secondary w-100 m-1" style="background-color: rgb(75, 134, 211);"
+      @click="lyricsProcess">Process lyrics</button>
     <!-- <p v-if="texto_dividido">
         {{ texto_dividido }}
     </p> -->
@@ -54,6 +49,7 @@ const lyricsProcess = () => {
   background-color: transparent;
   font-family: 'Inter', 'Arial', 'Helvetica', 'sans-serif';
 }
+
 
 .no-select {
   user-select: none;

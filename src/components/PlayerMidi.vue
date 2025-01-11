@@ -1,50 +1,59 @@
 <template>
-    <ul class="navbar-nav mx-auto">
-        <li class="nav-item">
-            <button class="btn btn-primary" @click="play">
-                <svg-icon type="mdi" :path="play"></svg-icon>
-
-            </button>
-        </li>
-        <li class="nav-item">
-            <button class="btn btn-secondary" @click="pause">
-                <svg-icon type="mdi" :path="pause"></svg-icon>
-            </button>
-        </li>
-        <li class="nav-item">
-            <input type="number" class="form-control" v-model="tempo" placeholder="Tempo" step="0.01" max="999.99"
-                style="width: 80px;">
-        </li>
-    </ul>
+    <div class="playback-controls">
+        <button @click="togglePlay">
+            <SvgIcon type="mdi" :path="isPlaying ? pause : play" />
+        </button>
+        <span>{{ store.tempo }} BPM</span>
+        <span>Time: {{ formattedTime }}</span>
+    </div>
 </template>
+
 <script setup>
-import { computed, ref, watch } from 'vue';
-import SvgIcon from '@jamescoyle/vue-icon';
-import { mdiPause, mdiPlay } from '@mdi/js';
-const play = ref(mdiPlay);
-const pause = ref(mdiPause);    
-const tempo = ref(120);
-const emit = defineEmits(['play', 'pause', 'changeTempo']);
-watch(() => tempo, (newTempo) => {
-    emit('changeTempo', newTempo);
-});
+import { computed } from 'vue'
+import SvgIcon from '@jamescoyle/vue-icon'
+import { mdiPause, mdiPlay } from '@mdi/js'
+import { usePlayerStore } from '@/stores/playerStore'
+
+const store = usePlayerStore()
+const play = mdiPlay
+const pause = mdiPause
+
+const isPlaying = computed(() => store.isPlaying)
+
+
+
+
+function togglePlay() {
+    if (store.isPlaying) {
+        store.pause()
+    } else {
+        store.play()
+    }
+}
+
+const formattedTime = computed(() => {
+    const minutes = Math.floor(store.currentTime / 60000)
+    const seconds = Math.floor((store.currentTime % 60000) / 1000)
+    const milliseconds = Math.floor((store.currentTime % 1000))
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`
+})
 </script>
 
 <style>
 .playback-controls {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    padding: 1rem;
-    background: #f5f5f5;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    background: transparent;
     border-bottom: 1px solid #ddd;
 }
 
 .playback-controls button {
-    padding: 0.5rem 1rem;
+    padding: 0.25rem 0.5rem;
     border: none;
     border-radius: 4px;
-    background: #4CAF50;
+    background: rgb(75, 134, 211);
     color: white;
     cursor: pointer;
 }
@@ -52,9 +61,5 @@ watch(() => tempo, (newTempo) => {
 .playback-controls button:disabled {
     background: #ccc;
     cursor: not-allowed;
-}
-
-.playback-controls input[type="range"] {
-    width: 200px;
 }
 </style>
