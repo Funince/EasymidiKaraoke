@@ -11,6 +11,14 @@
             </div>
 
             <template v-if="format === 'srt'">
+                <!-- Base Color Section -->
+                <div class="form-group">
+                    <div class="input-row">
+                        <label class="input-label">Base Color:</label>
+                        <input type="color" v-model="baseColor" class="color-input" />
+                        <input type="text" v-model="baseHexColor" class="color-hex-input" />
+                    </div>
+                </div>
 
                 <div class="slider-input">
                     <label>{{ isColorEnabled ? 'Karaoke On' : 'Karaoke Off' }}</label>
@@ -19,6 +27,7 @@
                 <div class="form-group" v-if="isColorEnabled">
                     <div class="form-group">
                         <div class="input-row">
+                            <label class="input-label">Highlight Color:</label>
                             <input type="color" v-model="color" :disabled="!isColorEnabled" class="color-input" />
                             <input type="text" v-model="hexColor" class="color-hex-input" :disabled="!isColorEnabled" />
                         </div>
@@ -69,10 +78,22 @@ watch(() => props.isVisible, (newVal) => {
 const dialog = ref(null);
 const color = ref('#000000');
 const hexColor = ref('#000000');
+const baseColor = ref('#ffffff');
+const baseHexColor = ref('#ffffff');
 const isColorEnabled = ref(true);
 const delay = ref(0);
 const anticipationTime = ref(1); // Default anticipation time
 const maxVisibleSentences = ref(3); // Default value, min: 1
+
+watch(baseColor, (newColor) => {
+    baseHexColor.value = newColor;
+});
+
+watch(baseHexColor, (newHex) => {
+    if (newHex.match(/^#[0-9A-Fa-f]{6}$/)) {
+        baseColor.value = newHex;
+    }
+});
 
 watch(color, (newColor) => {
     if (isColorEnabled.value) {
@@ -87,7 +108,10 @@ watch(hexColor, (newHex) => {
 });
 
 function accept() {
-    const options = { delay: parseFloat(delay.value) };
+    const options = { 
+        delay: parseFloat(delay.value),
+        baseColor: baseColor.value === '#ffffff' ? 'white' : baseColor.value
+    };
     if (props.format === 'srt') {
         options.color = color.value;
         options.isColorEnabled = isColorEnabled.value;
@@ -140,9 +164,9 @@ h3 {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    width: 80%;
-    gap: 5px;
-    justify-content: center
+    width: 100%;
+    gap: 10px;
+    margin-bottom: 10px;
 }
 
 .input-label {

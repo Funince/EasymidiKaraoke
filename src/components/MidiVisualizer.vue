@@ -238,7 +238,7 @@ const exptAss = ({ color, isColorEnabled, delay }) => {
   link.click();
 }
 
-const exptSrt = ({ color, isColorEnabled, delay, anticipation_time, maxVisibleSentences }) => {
+const exptSrt = ({ color, isColorEnabled, delay, anticipation_time, maxVisibleSentences, baseColor }) => {
   let srtContent;
   hideColorPicker();
   let data = exportData();
@@ -253,12 +253,10 @@ const exptSrt = ({ color, isColorEnabled, delay, anticipation_time, maxVisibleSe
   data = agruparSilabasSrt(data, oraciones.value, usporquarter.value, pasoGrilla.value);
 
   if (isColorEnabled) {
-    srtContent = formatSrtcolor(data, color, delay, anticipation_time, maxVisibleSentences);
+    srtContent = formatSrtcolor(data, color, delay, anticipation_time, maxVisibleSentences, baseColor);
   } else {
-    srtContent = formatSrt(data, delay);
+    srtContent = formatSrt(data, delay, baseColor);
   }
-
-  console.log('srtContent', srtContent);
 
   // Crear un archivo .srt y descargarlo
   const blob = new Blob([srtContent], { type: 'text/plain;charset=utf-8' });

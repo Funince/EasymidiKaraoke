@@ -1,4 +1,4 @@
-export const formatSrtcolor = (data, color, delay = 0, anticipation_time = 1, maxVisibleSentences = 3) => {
+export const formatSrtcolor = (data, color, delay = 0, anticipation_time = 1, maxVisibleSentences = 3, baseColor = 'white') => {
   // Primera pasada: ajustar todos los tiempos de las oraciones
   const processedData = data.map((item, index, array) => {
     const currentItem = {...item}
@@ -7,9 +7,6 @@ export const formatSrtcolor = (data, color, delay = 0, anticipation_time = 1, ma
       const nextItem = array[index + 1]
       const timeDiff = compareTimestamps(item.endTime, nextItem.startTime)
       if (timeDiff) {
-        console.log(`Ajustando tiempo entre oraciones:`)
-        console.log(`- Oración actual: "${item.oracion}"`)
-        console.log(`  De: ${item.endTime} a: ${nextItem.startTime}`)
         currentItem.endTime = nextItem.startTime
       }
     }
@@ -35,7 +32,10 @@ export const formatSrtcolor = (data, color, delay = 0, anticipation_time = 1, ma
     // Mostrar anticipación de la oración
     const sentenceStartTime = addDelay(item.startTime, delay - anticipation_time)
     const sentenceEndTime = addDelay(item.silabas[0].startTime, delay)
-    const fullText = [item.oracion, ...nextSentences].join('\n')
+    const fullText = [
+      baseColor !== 'white' ? `<font color='${baseColor}'>${item.oracion}</font>` : item.oracion,
+      ...nextSentences.map(sent => baseColor !== 'white' ? `<font color='${baseColor}'>${sent}</font>` : sent)
+    ].join('\n')
     srtContent += `${sequenceNumber++}\n${sentenceStartTime} --> ${sentenceEndTime}\n${fullText}\n\n`
 
     // Procesar sílabas con coloración progresiva
@@ -45,11 +45,26 @@ export const formatSrtcolor = (data, color, delay = 0, anticipation_time = 1, ma
                      addDelay(item.endTime, delay) : 
                      addDelay(item.silabas[silabaIndex + 1].startTime, delay)
       
-      let texto = item.silabas
-        .map((s, i) => (i <= silabaIndex ? `<font color='${color}'>${s.texto}</font>` : s.texto))
-        .join('')
-      texto = texto.replace(/\$/g, ' ')
-      const combinedText = [texto, ...nextSentences].join('\n')
+      // Construir el texto de la oración actual con colores
+      let mainText = ''
+      let acumulado = ''
+      item.silabas.forEach((s, i) => {
+        if (i <= silabaIndex) {
+          acumulado += s.texto
+          mainText += `<font color='${color}'>${s.texto}</font>`
+        } else {
+          mainText += baseColor !== 'white' ? 
+            `<font color='${baseColor}'>${s.texto}</font>` : 
+            s.texto
+        }
+      })
+
+      // Combinar con las siguientes oraciones
+      const combinedText = [
+        mainText,
+        ...nextSentences.map(sent => baseColor !== 'white' ? `<font color='${baseColor}'>${sent}</font>` : sent)
+      ].join('\n')
+
       srtContent += `${sequenceNumber++}\n${startTime} --> ${endTime}\n${combinedText}\n\n`
     })
   })
@@ -76,19 +91,15 @@ const compareTimestamps = (time1, time2) => {
   return true
 }
 
-const convertToMs = (timeStr) => {
-  const [hours, minutes, seconds] = timeStr.split(':')
-  const [secs, ms] = seconds.split(',')
-  return (parseInt(hours) * 3600 + parseInt(minutes) * 60 + parseInt(secs)) * 1000 + parseInt(ms)
-}
 
-export const formatSrt = (data, delay = 0) => {
+export const formatSrt = (data, delay = 0, baseColor = 'white') => {
   return data
     .map((item, index) => {
       const startTime = addDelay(item.startTime, delay)
       const endTime = addDelay(item.endTime, delay)
-      console.log('texto:', item.silabas)
-      const texto = item.oracion // Reemplazar $ por espacios
+      const texto = baseColor !== 'white' ? 
+        `<font color='${baseColor}'>${item.oracion}</font>` : 
+        item.oracion
       return `${index + 1}\n${startTime} --> ${endTime}\n${texto}\n`
     })
     .join('\n')
