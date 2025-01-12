@@ -111,15 +111,27 @@ function fileSelect(event) {
 }
 
 function exptAss() {
-    emit('exptSrt', 'ass')
+    if (!props.isFileLoaded) {
+        alert('No hay datos para exportar');
+        return;
+    }
+    emit('exptAss', 'ass');
 }
 
 function exptSrt() {
-    emit('exptSrt', 'srt')
+    if (!props.isFileLoaded) {
+        alert('No hay datos para exportar');
+        return;
+    }
+    emit('exptSrt', 'srt');
 }
 
 function exportMidi() {
-    emit('exportMidi')
+    if (!props.isFileLoaded) {
+        alert('No hay datos para exportar');
+        return;
+    }
+    emit('exportMidi');
 }
 
 function selectItem(item) {

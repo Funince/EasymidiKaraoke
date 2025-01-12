@@ -5,7 +5,7 @@
     @contextmenu.prevent="showContextMenu">
     <slot>
       <BarraMenu :listChannel="listChannel" @SelectChannel="seleccion" @aumenta="aumenta" @disminuye="disminuye"
-        @exptAss="exptAss" @exptSrt="showColorPicker" @fileSelect="handleFileUpload" @undo="undo"
+        @exptAss="showColorPicker" @exptSrt="showColorPicker" @fileSelect="handleFileUpload" @undo="undo"
         @exportMidi="exportMidi" :isFileLoaded="isFileLoaded" />
     </slot>
     <div style="height: 40px">
@@ -219,6 +219,10 @@ const agruparSilabas = (data, grupos) => {
 const exptAss = ({ color, isColorEnabled, delay }) => {
   hideColorPicker();
   let data = exportData();
+  if (!data || data.length === 0) {
+    alert('No hay datos para exportar');
+    return;
+  }
   if (data.length < oraciones.value.flat().length) {
     alert('There are not enough notes for the syllables')
     return
@@ -234,11 +238,14 @@ const exptAss = ({ color, isColorEnabled, delay }) => {
   link.click();
 }
 
-const exptSrt = ({ color, isColorEnabled, delay }) => {
+const exptSrt = ({ color, isColorEnabled, delay, anticipation_time, maxVisibleSentences }) => {
   let srtContent;
   hideColorPicker();
   let data = exportData();
-
+  if (!data || data.length === 0) {
+    alert('No hay datos para exportar');
+    return;
+  }
   if (data.length < oraciones.value.flat().length) {
     alert('No hay suficientes notas para las silabas');
     return;
@@ -246,7 +253,7 @@ const exptSrt = ({ color, isColorEnabled, delay }) => {
   data = agruparSilabasSrt(data, oraciones.value, usporquarter.value, pasoGrilla.value);
 
   if (isColorEnabled) {
-    srtContent = formatSrtcolor(data, color.value, delay);
+    srtContent = formatSrtcolor(data, color, delay, anticipation_time, maxVisibleSentences);
   } else {
     srtContent = formatSrt(data, delay);
   }

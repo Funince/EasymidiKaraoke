@@ -2,7 +2,7 @@
     <dialog ref="dialog" class="centered-dialog">
         <form method="dialog" @submit.prevent="accept">
             <h3>Export Options</h3>
-            
+
             <div class="form-group">
                 <div class="input-row">
                     <label class="input-label">Delay (seconds):</label>
@@ -11,15 +11,26 @@
             </div>
 
             <template v-if="format === 'srt'">
-                <div class="form-group">
-                    <div class="input-row">
-                        <input type="color" v-model="color" :disabled="!isColorEnabled" class="color-input" />
-                        <input type="text" v-model="hexColor" class="color-hex-input" :disabled="!isColorEnabled" />
-                    </div>
-                </div>
+
                 <div class="slider-input">
                     <label>{{ isColorEnabled ? 'Karaoke On' : 'Karaoke Off' }}</label>
                     <input type="checkbox" v-model="isColorEnabled" />
+                </div>
+                <div class="form-group" v-if="isColorEnabled">
+                    <div class="form-group">
+                        <div class="input-row">
+                            <input type="color" v-model="color" :disabled="!isColorEnabled" class="color-input" />
+                            <input type="text" v-model="hexColor" class="color-hex-input" :disabled="!isColorEnabled" />
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <label class="input-label">Anticipation Time (seconds):</label>
+                        <input type="number" v-model="anticipationTime" step="0.1" class="anticipation-input">
+                    </div>
+                    <div class="input-row">
+                        <label class="input-label">Visible sentences:</label>
+                        <input type="number" v-model="maxVisibleSentences" min="1" max="5" class="sentences-input">
+                    </div>
                 </div>
             </template>
 
@@ -60,6 +71,8 @@ const color = ref('#000000');
 const hexColor = ref('#000000');
 const isColorEnabled = ref(true);
 const delay = ref(0);
+const anticipationTime = ref(1); // Default anticipation time
+const maxVisibleSentences = ref(3); // Default value, min: 1
 
 watch(color, (newColor) => {
     if (isColorEnabled.value) {
@@ -78,6 +91,8 @@ function accept() {
     if (props.format === 'srt') {
         options.color = color.value;
         options.isColorEnabled = isColorEnabled.value;
+        options.anticipation_time = parseFloat(anticipationTime.value);
+        options.maxVisibleSentences = parseInt(maxVisibleSentences.value);
     }
     emit('accept', options);
     dialog.value.close();
@@ -117,6 +132,8 @@ h3 {
     width: 100%;
     display: flex;
     justify-content: center;
+    align-items: center;
+    flex-direction: column;
 }
 
 .input-row {
@@ -124,16 +141,17 @@ h3 {
     align-items: center;
     justify-content: space-between;
     width: 80%;
-    gap: 10px;
+    gap: 5px;
     justify-content: center
 }
 
 .input-label {
-    width: 80px; /* Same width as color input */
+    width: 150px; /* Same width as color input */
 }
 
 .color-input {
-    width: 80px;
+    width: 110px;
+    margin-right:40px ;
 }
 
 .color-hex-input {
@@ -183,6 +201,22 @@ button[type="submit"] {
 
 .delay-input {
     width: 80px; /* Same width as color input */
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: white;
+}
+
+.anticipation-input {
+    width: 80px; /* Same width as color input */
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: white;
+}
+
+.sentences-input {
+    width: 80px;
     padding: 5px;
     border: 1px solid #ccc;
     border-radius: 4px;

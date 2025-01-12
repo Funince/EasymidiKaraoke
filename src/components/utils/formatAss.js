@@ -1,18 +1,16 @@
 // formatAss.js
 const addDelay = (timeStr, delaySeconds) => {
-  const [hours, minutes, seconds] = timeStr.split(':')
-  const [secs, ms] = seconds.split(',')
+  const [minutes, secs, ms] = timeStr.split(/[:.]/)  
 
   let totalMs =
-    (parseInt(hours) * 3600 + parseInt(minutes) * 60 + parseInt(secs)) * 1000 + parseInt(ms)
+    (parseInt(minutes) * 60 + parseInt(secs)) * 1000 + parseInt(ms)
   totalMs += delaySeconds * 1000
 
-  const newHours = Math.floor(totalMs / (3600 * 1000))
   const newMinutes = Math.floor((totalMs % (3600 * 1000)) / (60 * 1000))
   const newSeconds = Math.floor((totalMs % (60 * 1000)) / 1000)
   const newMs = Math.floor(totalMs % 1000)
 
-  return `${String(newHours).padStart(2, '0')}:${String(newMinutes).padStart(2, '0')}:${String(newSeconds).padStart(2, '0')}.${String(newMs).padStart(2, '0')}`
+  return `${String(newMinutes).padStart(2, '0')}:${String(newSeconds).padStart(2, '0')}.${String(newMs).padStart(2, '0')}`
 }
 
 const formatAss = (data, delay = 0) => {
