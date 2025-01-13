@@ -11,7 +11,7 @@
 </template>
 
 <script setup>
-import { ref, defineEmits, onUnmounted} from 'vue';
+import { ref,  onUnmounted} from 'vue';
 
 const visible = ref(false);
 const x = ref(0);
