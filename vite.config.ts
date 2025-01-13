@@ -12,5 +12,43 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('@jamescoyle/vue-icon')) {
+              return 'vue-icon';
+            }
+            if (id.includes('@mdi/js')) {
+              return 'mdi-js';
+            }
+            if (id.includes('tone')) {
+              return 'tone';
+            }
+            if (id.includes('lodash')) {
+              return 'lodash';
+            }
+            if (id.includes('midi-json-parser')) {
+              return 'midi-json-parser';
+            }
+            if (id.includes('bootstrap')) {
+              return 'bootstrap';
+            }
+            if (id.includes('pinia')) {
+              return 'pinia';
+            }
+            if (id.includes('vue-router')) {
+              return 'vue-router';
+            }
+            if (id.includes('vue')) {
+              return 'vue';
+            }
+            return 'vendor';
+          }
+        }
+      }
+    }
   }
 })
