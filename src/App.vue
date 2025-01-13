@@ -23,7 +23,7 @@
 <script setup>
 import MidiVisualizer from '@/components/MidiVisualizer.vue'
 import InputText from '@/components/InputText.vue'
-import PlayerMidi from './components/PlayerMidi.vue';
+import PlayerMidi from '@/components/PlayerMidi.vue';
 import { ref } from 'vue';
 
 const sharedData = ref([]);
