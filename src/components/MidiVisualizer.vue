@@ -46,7 +46,7 @@ import formatAss from '@/components/utils/formatAss.js';
 import { mdiPlusCircle, mdiMinusCircle, mdiAlbum } from '@mdi/js'
 import { debounce, clamp } from 'lodash'
 import { parseArrayBuffer } from 'midi-json-parser'
-import { toRefs, ref, onMounted, onBeforeMount, onUnmounted, watch, onUpdated, computed, defineAsyncComponent } from 'vue'
+import { toRefs, ref, onMounted, onBeforeMount, onUnmounted, watch, onUpdated, defineAsyncComponent } from 'vue'
 import { paintCanvas } from '@/components/utils/paintCanvas.js'
 import { processMidi } from '@/components/utils/midiProcessor.js';
 import { exportRectsToMidi } from '@/components/utils/formatMidi.js'
