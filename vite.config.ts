@@ -47,8 +47,8 @@ export default defineConfig({
             }
             return 'vendor';
           }
-          if (id.includes('/src/components/InputText.vue') || id.includes('/src/components/MidiVisualizer.vue')) {
-            return 'inputtext-midivisualizer';
+          if (id.includes('/src/components/MidiVisualizer.vue')) {
+            return 'midivisualizer';
           }
         }
       }
