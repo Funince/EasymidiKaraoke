@@ -20,8 +20,7 @@
 </template>
 
 <script setup>
-import { computed,onMounted,onUnmounted,ref} from 'vue'
-import SvgIcon from '@jamescoyle/vue-icon'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { mdiPause, mdiPlay } from '@mdi/js'
 import { usePlayerStore } from '@/stores/playerStore'
 
@@ -36,6 +35,8 @@ const audioInput = ref(null)
 
 const selectedFileName = ref('')
 const volume = ref(0.5) // Default volume
+
+const SvgIcon = defineAsyncComponent(() => import('@jamescoyle/vue-icon'))
 
 async function handleAudioUpload(event) {
     const file = event.target.files[0]
@@ -118,10 +119,12 @@ onUnmounted(() => {
 .custom-file-button:active {
     transform: translateY(0);
 }
+
 .custom-file-button:disabled {
     background: #ccc;
     cursor: not-allowed;
 }
+
 .audio-controls {
     display: flex;
     align-items: center;
@@ -136,6 +139,7 @@ onUnmounted(() => {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
 .playback-controls button {
     padding: 0.25rem 0.5rem;
     border: none;

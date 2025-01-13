@@ -1,8 +1,9 @@
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, defineAsyncComponent } from 'vue'
 import { convertirTicksATiempo } from './timeUtils'
 import { usePlayerStore } from '@/stores/playerStore'
 import { splitNote, findClickedNote } from './noteOperations'
-import * as Tone from 'tone'
+
+const Tone = defineAsyncComponent(() => import('tone'))
 
 // Initialize Tone.js sampler
 const sampler = new Tone.Sampler({

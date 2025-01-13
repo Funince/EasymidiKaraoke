@@ -1,5 +1,6 @@
 <template>
-  <ColorPickerModal :isVisible="isColorPickerVisible" :format="currentFormat" @accept="handleExport" @cancel="hideColorPicker" />
+  <ColorPickerModal :isVisible="isColorPickerVisible" :format="currentFormat" @accept="handleExport"
+    @cancel="hideColorPicker" />
 
   <div tabindex="3" @keydown.ctrl.up="aumenta" @keydown.ctrl.down="disminuye" class="cuerpo"
     @contextmenu.prevent="showContextMenu">
@@ -41,16 +42,11 @@ import { convertirTicksATiempo, convertirATiempo } from '@/components/utils/time
 
 import { formatSrt, agruparSilabasSrt, formatSrtcolor } from '@/components/utils/formatSrt';
 import formatAss from '@/components/utils/formatAss.js';
-import SvgIcon from '@jamescoyle/vue-icon'
 import { mdiPlusCircle, mdiMinusCircle, mdiAlbum } from '@mdi/js'
-import BarraMenu from '@/components/BarraMenu.vue'
-import BarraScroll from '@/components/BarraScroll.vue'
-import ColorPickerModal from '@/components/ColorPickerModal.vue'
 import { debounce, clamp } from 'lodash'
 import { parseArrayBuffer } from 'midi-json-parser'
-import { toRefs, ref, onMounted, onBeforeMount, onUnmounted, watch, onUpdated, computed } from 'vue'
+import { toRefs, ref, onMounted, onBeforeMount, onUnmounted, watch, onUpdated, computed, defineAsyncComponent } from 'vue'
 import { paintCanvas } from '@/components/utils/paintCanvas.js'
-import ContextMenu from '@/components/ContextMenu.vue';
 import { processMidi } from '@/components/utils/midiProcessor.js';
 import { exportRectsToMidi } from '@/components/utils/formatMidi.js'
 import { usePlayerStore } from '@/stores/playerStore'
@@ -115,6 +111,12 @@ const { sharedData } = toRefs(props)
 const isColorPickerVisible = ref(false);
 const mouseX = ref(0);
 const currentFormat = ref('');
+
+const SvgIcon = defineAsyncComponent(() => import('@jamescoyle/vue-icon'))
+const BarraMenu = defineAsyncComponent(() => import('@/components/BarraMenu.vue'))
+const BarraScroll = defineAsyncComponent(() => import('@/components/BarraScroll.vue'))
+const ColorPickerModal = defineAsyncComponent(() => import('@/components/ColorPickerModal.vue'))
+const ContextMenu = defineAsyncComponent(() => import('@/components/ContextMenu.vue'))
 
 const aumenta = () => {
   let tempscale = scale.value.x

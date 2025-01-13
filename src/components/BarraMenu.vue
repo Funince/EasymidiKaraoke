@@ -63,8 +63,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue';
-import SvgIcon from '@jamescoyle/vue-icon'
+import { computed, ref, watch, defineAsyncComponent } from 'vue';
 import { mdiArrowULeftTop } from '@mdi/js';
 
 const arrowleft = ref(mdiArrowULeftTop);
@@ -81,6 +80,8 @@ const menuVisible = computed(() => props.listChannel.length > 1 ? true : false)
 const menuItems = computed(() => {
     return props.listChannel;
 });
+
+const SvgIcon = defineAsyncComponent(() => import('@jamescoyle/vue-icon'))
 
 watch(() => props.listChannel, (newList) => {
     if (newList.length > 0) {
