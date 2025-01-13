@@ -51,8 +51,8 @@ export default defineConfig({
             return 'midivisualizer';
           }
 
-          if (id.includes('/src/components/InputText.vue')) {
-            return 'inputtext';
+          if (id.includes('/src/components/KaraokeInput.vue')) {
+            return 'karaokeinput'
           }
         }
       }
