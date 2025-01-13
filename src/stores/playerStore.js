@@ -107,6 +107,7 @@ export const usePlayerStore = defineStore('player', () => {
     stop,
     updateTime,
     setTempo,
-    setVolume
+    setVolume,
+    Tone
   }
 })

@@ -22,10 +22,10 @@
 
 <script setup>
 import { ref, defineAsyncComponent } from 'vue';
+import MidiVisualizer from '@/components/MidiVisualizer.vue';
+import PlayerMidi from './components/PlayerMidi.vue';
+import InputText from './components/InputText.vue';
 
-const MidiVisualizer = defineAsyncComponent(() => import('@/components/MidiVisualizer.vue'))
-const InputText = defineAsyncComponent(() => import('@/components/InputText.vue'))
-const PlayerMidi = defineAsyncComponent(() => import('@/components/PlayerMidi.vue'))
 
 const sharedData = ref([]);
 

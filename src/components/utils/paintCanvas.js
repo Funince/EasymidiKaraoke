@@ -1,21 +1,7 @@
-import { ref, onMounted, onUnmounted, watch, defineAsyncComponent } from 'vue'
+import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { convertirTicksATiempo } from './timeUtils'
 import { usePlayerStore } from '@/stores/playerStore'
 import { splitNote, findClickedNote } from './noteOperations'
-
-const Tone = defineAsyncComponent(() => import('tone'))
-
-// Initialize Tone.js sampler
-const sampler = new Tone.Sampler({
-  urls: {
-    C4: 'C4.mp3',
-    'D#4': 'Ds4.mp3',
-    'F#4': 'Fs4.mp3',
-    A4: 'A4.mp3'
-  },
-  release: 1,
-  baseUrl: 'https://tonejs.github.io/audio/salamander/'
-}).toDestination()
 
 export function paintCanvas(
   height_note = 16,
@@ -27,6 +13,20 @@ export function paintCanvas(
 ) {
   let elapsedTime = 0
   const store = usePlayerStore()
+  const Tone = store.Tone
+
+  // Initialize Tone.js sampler
+  const sampler = new Tone.Sampler({
+    urls: {
+      C4: 'C4.mp3',
+      'D#4': 'Ds4.mp3',
+      'F#4': 'Fs4.mp3',
+      A4: 'A4.mp3'
+    },
+    release: 1,
+    baseUrl: 'https://tonejs.github.io/audio/salamander/'
+  }).toDestination()
+
   const rCanvas = ref(null)
   const gridcanvas = ref(null)
   const stripeCanvas = ref(null) // New canvas for red stripe
@@ -660,14 +660,12 @@ export function paintCanvas(
     ctx.value = rCanvas.value.getContext('2d')
     ctg.value = gridcanvas.value.getContext('2d')
     // Initialize stripe canvas
-    stripeCanvas.value = document.createElement('canvas')
     stripeCanvas.value.style.position = 'absolute'
     stripeCanvas.value.style.pointerEvents = 'none'
     stripeCanvas.value.width = rCanvas.value.width
-    stripeCanvas.value.height = rCanvas.value.clientHeight
-    stripeCanvas.value.style.top = rCanvas.value.offsetTop + 'px'
+    stripeCanvas.value.height = (rCanvas.value.clientHeight + gridcanvas.value.clientHeight)
+    
     stripeCanvas.value.style.left = rCanvas.value.offsetLeft + 'px'
-
     stripeCtx.value = stripeCanvas.value.getContext('2d')
     rCanvas.value.parentNode.appendChild(stripeCanvas.value)
 
@@ -697,12 +695,7 @@ export function paintCanvas(
 
   let isPaused = false
   let isAnimating = false
-  function formatTime(ms) {
-    const minutes = Math.floor(ms / 60000)
-    const seconds = Math.floor((ms % 60000) / 1000)
-    const milliseconds = Math.floor(ms % 1000)
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`
-  }
+
   watch(
     () => store.isPlaying,
     (isPlaying) => {

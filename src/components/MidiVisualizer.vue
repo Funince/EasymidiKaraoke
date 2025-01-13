@@ -15,6 +15,7 @@
     <div tabindex="2" ref="visualization" id="visualization">
       <div tabindex="1" ref="contCanvas" class="contCanvas">
         <canvas ref="rCanvas" id="idCanvas" @wheel="handleWheel"></canvas>
+        <canvas ref="stripeCanvas" id="stripeCanvas"></canvas>
       </div>
     </div>
     <div style="display: flex; align-items: center; width: 100%">
@@ -50,6 +51,8 @@ import { paintCanvas } from '@/components/utils/paintCanvas.js'
 import { processMidi } from '@/components/utils/midiProcessor.js';
 import { exportRectsToMidi } from '@/components/utils/formatMidi.js'
 import { usePlayerStore } from '@/stores/playerStore'
+import BarraScroll from '@/components/BarraScroll.vue'
+
 
 const store = usePlayerStore()
 
@@ -59,9 +62,9 @@ let NOTAS_TOTAL = ref(128)
 const usporquarter = ref(0)
 const isFileLoaded = ref(false) // Track if a file is loaded
 const {
+  stripeCanvas,
   undoHistory,
   gridcanvas,
-  stripeCanvas,
   offsetX,
   pasoGrilla,
   list_text,
@@ -114,7 +117,9 @@ const currentFormat = ref('');
 
 const SvgIcon = defineAsyncComponent(() => import('@jamescoyle/vue-icon'))
 const BarraMenu = defineAsyncComponent(() => import('@/components/BarraMenu.vue'))
-const BarraScroll = defineAsyncComponent(() => import('@/components/BarraScroll.vue'))
+
+
+
 const ColorPickerModal = defineAsyncComponent(() => import('@/components/ColorPickerModal.vue'))
 const ContextMenu = defineAsyncComponent(() => import('@/components/ContextMenu.vue'))
 
@@ -369,7 +374,8 @@ function handleResize() {
   rCanvas.value.width = contCanvas.value.clientWidth
   gridcanvas.value.style.width = `${contCanvas.value.clientWidth}px`
   stripeCanvas.value.width = contCanvas.value.clientWidth
-  stripeCanvas.value.height = contCanvas.value.clientHeight
+  stripeCanvas.value.height = contCanvas.value.clientHeight+gridcanvas.value.clientHeight
+  stripeCanvas.value.style.top = `${gridcanvas.value.offsetTop}px`
   drawGrid()
   drawRectangles()
 }
@@ -498,6 +504,7 @@ const handleExport = (options) => {
   overflow-y: auto;
   margin: 0%;
   padding: 0;
+  overflow-x: hidden;
 }
 
 #gridcanvas {

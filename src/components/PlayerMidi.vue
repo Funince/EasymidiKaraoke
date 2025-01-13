@@ -23,6 +23,7 @@
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { mdiPause, mdiPlay } from '@mdi/js'
 import { usePlayerStore } from '@/stores/playerStore'
+import SvgIcon from '@jamescoyle/vue-icon'
 
 const store = usePlayerStore()
 const play = mdiPlay
@@ -36,7 +37,6 @@ const audioInput = ref(null)
 const selectedFileName = ref('')
 const volume = ref(0.5) // Default volume
 
-const SvgIcon = defineAsyncComponent(() => import('@jamescoyle/vue-icon'))
 
 async function handleAudioUpload(event) {
     const file = event.target.files[0]
