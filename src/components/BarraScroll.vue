@@ -44,7 +44,7 @@
 <script setup>
 import SvgIcon from '@jamescoyle/vue-icon'
 import { mdiArrowUpDropCircleOutline } from '@mdi/js'
-import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { ref, computed, onMounted, watch} from 'vue'
 const thumb = ref(null)
 const scrollOffset = ref(0)
 defineExpose({ scrollOffset })
