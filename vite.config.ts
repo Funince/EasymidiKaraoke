@@ -18,9 +18,7 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('@jamescoyle/vue-icon')) {
-              return 'vue-icon';
-            }
+            
             if (id.includes('@mdi/js')) {
               return 'mdi-js';
             }
@@ -46,9 +44,6 @@ export default defineConfig({
               return 'vue';
             }
             return 'vendor';
-          }
-          if (id.includes('/src/components/MidiVisualizer.vue')) {
-            return 'midivisualizer';
           }
 
           if (id.includes('/src/components/KaraokeInput.vue')) {
