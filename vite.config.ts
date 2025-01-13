@@ -50,6 +50,10 @@ export default defineConfig({
           if (id.includes('/src/components/MidiVisualizer.vue')) {
             return 'midivisualizer';
           }
+
+          if (id.includes('/src/components/InputText.vue')) {
+            return 'inputtext';
+          }
         }
       }
     }
