@@ -2,8 +2,8 @@
   <ColorPickerModal :isVisible="isColorPickerVisible" :format="currentFormat" @accept="handleExport"
     @cancel="hideColorPicker" />
 
-  <div tabindex="3" @keydown.ctrl.up="aumenta" @keydown.ctrl.down="disminuye" class="cuerpo"
-    @contextmenu.prevent="showContextMenu">
+  <div tabindex="0" @keydown.ctrl.up.capture="aumenta" @keydown.ctrl.down.capture="disminuye" @keydown.ctrl.z="keyundo"
+    class="cuerpo" @contextmenu.prevent="showContextMenu">
     <slot>
       <BarraMenu :listChannel="listChannel" @SelectChannel="seleccion" @aumenta="aumenta" @disminuye="disminuye"
         @exptAss="showColorPicker" @exptSrt="showColorPicker" @fileSelect="handleFileUpload" @undo="undo"
@@ -12,25 +12,27 @@
     <div style="height: 40px">
       <canvas ref="gridcanvas" id="gridcanvas"></canvas>
     </div>
-    <div tabindex="2" ref="visualization" id="visualization">
-      <div tabindex="1" ref="contCanvas" class="contCanvas">
-        <canvas ref="rCanvas" id="idCanvas" @wheel="handleWheel"></canvas>
-        <canvas ref="stripeCanvas" id="stripeCanvas"></canvas>
-      </div>
-    </div>
-    <div style="display: flex; align-items: center; width: 100%">
-      <div style="flex-grow: 1; max-width: calc(100% - 17 * 3px)">
-        <BarraScroll ref="scrollbar" :contentLength="contentLength" />
+    <div ref="visualization" id="visualization">
+      <div ref="contCanvas" class="contCanvas">
+        <canvas tabindex="0" ref="rCanvas" id="idCanvas" @wheel="handleWheel"></canvas>
+        <canvas tabindex="0" ref="stripeCanvas" id="stripeCanvas"></canvas>
       </div>
 
-      <div class="zoom-svg" @click.prevent="aumenta">
-        <svg-icon type="mdi" :path="mdiPlusCircle"></svg-icon>
-      </div>
-      <div class="zoom-svg" @click.prevent="scaleReturn">
-        <svg-icon type="mdi" :path="mdiAlbum"></svg-icon>
-      </div>
-      <div class="zoom-svg" @click.prevent="disminuye">
-        <svg-icon type="mdi" :path="mdiMinusCircle"></svg-icon>
+
+      <div style="display: flex; align-items: center; width: 100%">
+        <div style="flex-grow: 1; max-width: calc(100% - 17 * 3px)">
+          <BarraScroll ref="scrollbar" :contentLength="contentLength" />
+        </div>
+
+        <div class="zoom-svg" @click.prevent="aumenta">
+          <svg-icon type="mdi" :path="mdiPlusCircle"></svg-icon>
+        </div>
+        <div class="zoom-svg" @click.prevent="scaleReturn">
+          <svg-icon type="mdi" :path="mdiAlbum"></svg-icon>
+        </div>
+        <div class="zoom-svg" @click.prevent="disminuye">
+          <svg-icon type="mdi" :path="mdiMinusCircle"></svg-icon>
+        </div>
       </div>
     </div>
   </div>
@@ -52,6 +54,7 @@ import { processMidi } from '@/components/utils/midiProcessor.js';
 import { exportRectsToMidi } from '@/components/utils/formatMidi.js'
 import { usePlayerStore } from '@/stores/playerStore'
 import BarraScroll from '@/components/BarraScroll.vue'
+
 
 
 const store = usePlayerStore()
@@ -123,6 +126,10 @@ const BarraMenu = defineAsyncComponent(() => import('@/components/BarraMenu.vue'
 const ColorPickerModal = defineAsyncComponent(() => import('@/components/ColorPickerModal.vue'))
 const ContextMenu = defineAsyncComponent(() => import('@/components/ContextMenu.vue'))
 
+
+const keyundo = () => {
+  undo()
+}
 const aumenta = () => {
   let tempscale = scale.value.x
   const newescala = clamp(tempscale * 0.75, 0.25, 50)
@@ -374,14 +381,12 @@ function handleResize() {
   rCanvas.value.width = contCanvas.value.clientWidth
   gridcanvas.value.style.width = `${contCanvas.value.clientWidth}px`
   stripeCanvas.value.width = contCanvas.value.clientWidth
-  stripeCanvas.value.height = contCanvas.value.clientHeight+gridcanvas.value.clientHeight
+  stripeCanvas.value.height = contCanvas.value.clientHeight + gridcanvas.value.clientHeight
   stripeCanvas.value.style.top = `${gridcanvas.value.offsetTop}px`
   drawGrid()
   drawRectangles()
 }
-const debouncedHandleMouseMove = debounce((event) => {
-  mouseX.value = event.clientX
-}, 0.2);
+
 onMounted(() => {
   const debouncedHandleResize = debounce(handleResize, 300)
   console.log('anchoTotal', rCanvas.value.width, scale.value.x)
@@ -389,11 +394,9 @@ onMounted(() => {
   gridcanvas.value.style.width = `${contCanvas.value.clientWidth}px`
   stripeCanvas.value.width = contCanvas.value.clientWidth
   stripeCanvas.value.height = contCanvas.value.clientHeight
+
   console.log('anchoTotal', rCanvas.value.width, scale.value.x)
-  rCanvas.value.addEventListener('mousedown', pickClick)
-  rCanvas.value.addEventListener('mousemove', pickDrag)
-  rCanvas.value.addEventListener('mouseup', pickRelease)
-  rCanvas.value.addEventListener('mousemove', debouncedHandleMouseMove);
+
 
   if (visualization.value) {
     resizeObserver = new ResizeObserver(debouncedHandleResize)
@@ -421,8 +424,6 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  rCanvas.value.removeEventListener('mousemove', debouncedHandleMouseMove);
-  debouncedHandleMouseMove.cancel(); // Clean up debounce
   window.removeEventListener('beforeunload', handleBeforeUnload)
 });
 
@@ -505,6 +506,7 @@ const handleExport = (options) => {
   margin: 0%;
   padding: 0;
   overflow-x: hidden;
+
 }
 
 #gridcanvas {
@@ -543,15 +545,5 @@ const handleExport = (options) => {
   .cuerpo {
     height: 100%;
   }
-}
-
-
-.current-time {
-  position: absolute;
-  color: black;
-  top: 90px;
-  left: -10px;
-  padding: 5px;
-  z-index: 1000;
 }
 </style>

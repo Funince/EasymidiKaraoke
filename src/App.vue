@@ -7,7 +7,7 @@
 
       <div class="content content-large">
 
-        <MidiVisualizer :sharedData="sharedData" />
+        <MidiVisualizer  :sharedData="sharedData"  />
 
       </div>
       <div class="content content-small">
@@ -21,13 +21,14 @@
 </template>
 
 <script setup>
-import { ref, defineAsyncComponent } from 'vue';
+import { ref } from 'vue';
 import MidiVisualizer from "@/components/MidiVisualizer.vue";
 import PlayerMidi from '@/components/PlayerMidi.vue';
 import InputText from "@/components/KaraokeInput.vue";
 
 
 const sharedData = ref([]);
+
 
 const updateData = (newData) => {
   sharedData.value = newData;

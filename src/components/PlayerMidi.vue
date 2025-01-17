@@ -49,8 +49,9 @@ async function handleAudioUpload(event) {
     }
 }
 function handleKeydown(e) {
+    e.preventDefault()
     if (e.code === 'Space') {
-        e.preventDefault()
+        
         togglePlay()
     }
 }
@@ -75,12 +76,14 @@ const formattedTime = computed(() => {
 })
 
 onMounted(() => {
-    window.addEventListener('keydown', handleKeydown)
+    const principal = document.querySelector('.cuerpo')
+    
+    principal.addEventListener('keydown', handleKeydown)
     updateVolume() // Set initial volume
 })
 
 onUnmounted(() => {
-    window.removeEventListener('keydown', handleKeydown)
+    principal.removeEventListener('keydown', handleKeydown)
 })
 </script>
 

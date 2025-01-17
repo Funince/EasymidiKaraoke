@@ -198,7 +198,6 @@ export function paintCanvas(
 
   // Function to handle clicks on the gridcanvas
   const handleGridCanvasClick = (event) => {
-    console.log('Click on grid canvas')
     if (!gridcanvas.value || !stripeCanvas.value) return
 
     // Store the x-coordinate as the new persistent red line position
@@ -334,6 +333,7 @@ export function paintCanvas(
 
   // Add these functions and modifications
   function handleMouseDown(e) {
+    rCanvas.value.focus()
     if (e.button !== 0) return
 
     e.preventDefault()
@@ -663,8 +663,8 @@ export function paintCanvas(
     stripeCanvas.value.style.position = 'absolute'
     stripeCanvas.value.style.pointerEvents = 'none'
     stripeCanvas.value.width = rCanvas.value.width
-    stripeCanvas.value.height = (rCanvas.value.clientHeight + gridcanvas.value.clientHeight)
-    
+    stripeCanvas.value.height = rCanvas.value.clientHeight + gridcanvas.value.clientHeight
+
     stripeCanvas.value.style.left = rCanvas.value.offsetLeft + 'px'
     stripeCtx.value = stripeCanvas.value.getContext('2d')
     rCanvas.value.parentNode.appendChild(stripeCanvas.value)
@@ -706,6 +706,9 @@ export function paintCanvas(
       }
     }
   )
+
+  const COLLISION_CHECK_INTERVAL = 0.01 // 10ms check interval
+
   function startAnimation() {
     let lastFrameTime = null
     if (isAnimating) return // Prevent multiple animations
@@ -730,6 +733,7 @@ export function paintCanvas(
         store.updateTime(elapsedTime)
         // Update red stripe position
         const currentPosition = ((elapsedTime / 1000) * (store.tempo * pasoGrilla.value)) / 60
+        const deltacanvas = ((deltaTime / 1000) * (store.tempo * pasoGrilla.value)) / 60
         currentTimePosition.value = currentPosition
         persistentRedLineX.value = currentPosition
 
@@ -739,7 +743,8 @@ export function paintCanvas(
           const rectEnd = rect.x + rect.width
           // Note starts playing
           if (
-            currentPosition >= rectX &&
+            currentPosition >= rectX-deltacanvas &&
+            currentPosition <= rectX+deltacanvas*2 &&
             currentPosition <= rectEnd &&
             !playingNotes.has(rect.id)
           ) {
